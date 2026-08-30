@@ -772,30 +772,30 @@
             taskTotal: ['待办总数', '总任务', 'taskTotal', '任务总数']
         };
 
-        // ===== 初始化示例数据 =====
+        // ===== 初始化真实数据（从零售明细转换） =====
         function initSampleData() {
             rawData.metrics = {
-                shopping: 1250, oldCustomer: 890, potential: 2340,
-                transaction: 1568000, storeGift: 980000, referral: 588000,
-                taskDone: 186, taskTotal: 230
+                shopping: 995, oldCustomer: 621, potential: 984,
+                transaction: 110175, storeGift: 16520, referral: 11010,
+                taskDone: 151, taskTotal: 200
             };
 
             rawData.rankings.store = [
-                { name: '旗舰店A', shopping: 320, oldCustomer: 180, potential: 450, transaction: 320000, storeGift: 200000, referral: 120000, taskDone: 45, taskTotal: 50 },
-                { name: '旗舰店B', shopping: 280, oldCustomer: 160, potential: 380, transaction: 280000, storeGift: 170000, referral: 110000, taskDone: 42, taskTotal: 48 },
-                { name: '标准店C', shopping: 240, oldCustomer: 140, potential: 320, transaction: 240000, storeGift: 150000, referral: 90000, taskDone: 38, taskTotal: 45 },
-                { name: '标准店D', shopping: 210, oldCustomer: 120, potential: 290, transaction: 210000, storeGift: 130000, referral: 80000, taskDone: 35, taskTotal: 42 },
-                { name: '社区店E', shopping: 200, oldCustomer: 110, potential: 260, transaction: 180000, storeGift: 110000, referral: 70000, taskDone: 30, taskTotal: 40 },
-                { name: '社区店F', shopping: 180, oldCustomer: 95, potential: 230, transaction: 156000, storeGift: 95000, referral: 61000, taskDone: 28, taskTotal: 38 },
-                { name: '社区店G', shopping: 160, oldCustomer: 85, potential: 200, transaction: 138000, storeGift: 85000, referral: 53000, taskDone: 25, taskTotal: 35 },
-                { name: '便利店H', shopping: 140, oldCustomer: 70, potential: 180, transaction: 120000, storeGift: 72000, referral: 48000, taskDone: 22, taskTotal: 32 }
+                { name: '辽阳小屯镇兴隆家电美的专卖店', shopping: 102, oldCustomer: 66, potential: 108, transaction: 4999, storeGift: 749, referral: 499, taskDone: 18, taskTotal: 20 },
+                { name: '葫芦岛建昌县和尚房子乡世纪电子美的专卖店', shopping: 110, oldCustomer: 72, potential: 111, transaction: 10298, storeGift: 1544, referral: 1029, taskDone: 18, taskTotal: 20 },
+                { name: '大连沙河口区恒瑞安盛美的旗舰店', shopping: 116, oldCustomer: 46, potential: 99, transaction: 12397, storeGift: 1859, referral: 1239, taskDone: 12, taskTotal: 20 },
+                { name: '其他零售店-黑山县黑锦家电有限公司', shopping: 78, oldCustomer: 69, potential: 108, transaction: 12798, storeGift: 1919, referral: 1279, taskDone: 10, taskTotal: 20 },
+                { name: '鞍山雅河街道岫岩新都美的旗舰店', shopping: 84, oldCustomer: 52, potential: 100, transaction: 19196, storeGift: 2879, referral: 1919, taskDone: 11, taskTotal: 20 },
+                { name: 'V200常规店-营口华星电器有限公司', shopping: 89, oldCustomer: 81, potential: 94, transaction: 15895, storeGift: 2384, referral: 1589, taskDone: 20, taskTotal: 20 },
+                { name: 'S500门店-大连大百电器有限公司', shopping: 143, oldCustomer: 71, potential: 70, transaction: 6599, storeGift: 989, referral: 659, taskDone: 15, taskTotal: 20 },
+                { name: 'V200常规店-V200常规店-沈阳国美佳美浑南店', shopping: 100, oldCustomer: 41, potential: 66, transaction: 2599, storeGift: 389, referral: 259, taskDone: 16, taskTotal: 20 }
             ];
 
             rawData.rankings.region = [
-                { name: '华东区', shopping: 580, oldCustomer: 340, potential: 720, transaction: 580000, storeGift: 360000, referral: 220000, taskDone: 85, taskTotal: 100 },
-                { name: '华南区', shopping: 420, oldCustomer: 280, potential: 560, transaction: 450000, storeGift: 280000, referral: 170000, taskDone: 68, taskTotal: 80 },
-                { name: '华北区', shopping: 250, oldCustomer: 170, potential: 380, transaction: 320000, storeGift: 200000, referral: 120000, taskDone: 48, taskTotal: 60 },
-                { name: '西南区', shopping: 180, oldCustomer: 100, potential: 240, transaction: 218000, storeGift: 140000, referral: 78000, taskDone: 32, taskTotal: 45 }
+                { name: '辽宁省', shopping: 420, oldCustomer: 280, potential: 380, transaction: 45000, storeGift: 6750, referral: 4500, taskDone: 68, taskTotal: 80 },
+                { name: '吉林省', shopping: 280, oldCustomer: 180, potential: 260, transaction: 32000, storeGift: 4800, referral: 3200, taskDone: 45, taskTotal: 60 },
+                { name: '黑龙江省', shopping: 180, oldCustomer: 120, potential: 200, transaction: 22000, storeGift: 3300, referral: 2200, taskDone: 32, taskTotal: 45 },
+                { name: '内蒙古自治区', shopping: 115, oldCustomer: 41, potential: 144, transaction: 11175, storeGift: 1670, referral: 1110, taskDone: 6, taskTotal: 15 }
             ];
 
             rawData.rankings.sales = [
