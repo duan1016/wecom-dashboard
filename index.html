@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="theme-color" content="#2563eb">
+    <title>企业微信使用情况通报工作台</title>
+    
+    <!-- PWA 支持 -->
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIuWbvueJh+WPt+S6uuWcsOaKgOacr+aWueiureeul+WQjOa1juiBl+S7veWkhyIsCiAgInNob3J0X25hbWUiOiAi5LyY5oiQ5bel5Y+35Ly65ZywIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiNmNWY3ZmEiLAogICJ0aGVtZV9jb2xvciI6ICIjMjU2M2ViIgp9">
+    
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #f5f7fa;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+        }
+
+        .header h1 { font-size: 28px; font-weight: 600; margin-bottom: 8px; }
+        .header p { font-size: 14px; opacity: 0.9; }
+
+        .content { padding: 30px 40px; }
+
+        /* ===== 指标卡片 - 5个横排 ===== */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-left: 4px solid #2563eb;
+            text-align: center;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(37,99,235,0.15);
+        }
+
+        .metric-card.accent-green { border-left-color: #10b981; }
+        .metric-card.accent-purple { border-left-color: #8b5cf6; }
+        .metric-card.accent-orange { border-left-color: #f59e0b; }
+        .metric-card.accent-pink { border-left-color: #ec4899; }
+
+        .metric-title {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 6px;
+        }
+
+        .metric-sub {
+            font-size: 11px;
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+
+        .metric-trend-up { color: #10b981; }
+        .metric-trend-down { color: #ef4444; }
+
+        /* ===== 排行榜区域 - 独立展示 ===== */
+        .rankings-section { margin-bottom: 40px; }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: #2563eb;
+            border-radius: 2px;
+        }
+
+        .ranking-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+        }
+
+        .ranking-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .ranking-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ranking-title .icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+        }
+
+        .ranking-toolbar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .search-box {
+            padding: 8px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            width: 180px;
+            transition: border-color 0.2s;
+        }
+
+        .search-box:focus { outline: none; border-color: #2563eb; }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-secondary { background: #f1f5f9; color: #475569; }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-warning { background: #fef3c7; color: #92400e; }
+        .btn-warning:hover { background: #fde68a; }
+        .btn-small { padding: 6px 12px; font-size: 12px; }
+
+        /* ===== 排行榜表格 ===== */
+        .ranking-table-wrapper {
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+
+        .ranking-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+
+        .ranking-table th {
+            background: #f8fafc;
+            padding: 12px 14px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            border-bottom: 2px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .ranking-table th:hover { background: #eff6ff; color: #2563eb; }
+
+        .ranking-table th .sort-icon {
+            display: inline-block;
+            margin-left: 4px;
+            font-size: 10px;
+            opacity: 0.4;
+        }
+
+        .ranking-table th.sort-active .sort-icon { opacity: 1; color: #2563eb; }
+
+        .ranking-table td {
+            padding: 12px 14px;
+            font-size: 13px;
+            color: #334155;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .ranking-table tr:hover { background: #f8fafc; }
+
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .rank-1 { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white; }
+        .rank-2 { background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%); color: white; }
+        .rank-3 { background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%); color: white; }
+        .rank-other { background: #e2e8f0; color: #64748b; }
+
+        /* 金额明细tooltip */
+        .amount-cell {
+            position: relative;
+            cursor: help;
+        }
+
+        .amount-cell .amount-detail {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .amount-cell:hover .amount-detail { display: block; }
+
+        .amount-detail::after {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-bottom-color: #1e293b;
+        }
+
+        /* ===== 数据导入区域 ===== */
+        .import-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .upload-area:hover { border-color: #2563eb; background: #f8fafc; }
+        .upload-icon { font-size: 48px; color: #2563eb; margin-bottom: 12px; }
+        .upload-text { font-size: 16px; color: #475569; margin-bottom: 8px; }
+        .upload-hint { font-size: 13px; color: #94a3b8; }
+        .file-input { display: none; }
+
+        .file-queue { margin-top: 20px; }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 3px solid #2563eb;
+        }
+
+        .file-name { font-size: 14px; font-weight: 500; color: #1e293b; margin-bottom: 4px; }
+        .file-meta { font-size: 12px; color: #64748b; }
+
+        .btn-danger { background: #fee2e2; color: #991b1b; }
+        .btn-danger:hover { background: #fecaca; }
+
+        /* 匹配配置 */
+        .match-config {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .config-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .match-fields {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .field-group { display: flex; flex-direction: column; gap: 6px; }
+        .field-label { font-size: 13px; font-weight: 500; color: #475569; }
+
+        .field-select {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .field-select:focus { outline: none; border-color: #2563eb; }
+
+        .match-result { margin-top: 20px; padding: 16px; border-radius: 8px; display: none; }
+        .match-result.success { background: #dcfce7; border: 1px solid #86efac; color: #166534; display: block; }
+        .match-result.error { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; display: block; }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .stat-item { background: white; padding: 12px; border-radius: 6px; text-align: center; }
+        .stat-value { font-size: 24px; font-weight: 700; color: #1e40af; margin-bottom: 4px; }
+        .stat-label { font-size: 12px; color: #64748b; }
+
+        .data-preview {
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            max-height: 400px;
+            overflow: auto;
+            display: none;
+        }
+
+        .preview-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .preview-table th { background: #f1f5f9; padding: 10px 12px; text-align: left; font-weight: 600; color: #475569; position: sticky; top: 0; }
+        .preview-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+
+        .import-status { margin-top: 20px; padding: 16px; border-radius: 8px; display: none; }
+        .import-status.success { background: #dcfce7; color: #166534; display: block; }
+        .import-status.error { background: #fee2e2; color: #991b1b; display: block; }
+
+        /* 响应式 - 平板 */
+        @media (max-width: 1200px) {
+            .metrics-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        /* 响应式 - 手机 */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            
+            .container { border-radius: 12px; }
+            
+            .header { padding: 20px 16px; }
+            .header h1 { font-size: 20px; margin-bottom: 6px; }
+            .header p { font-size: 12px; }
+            
+            .content { padding: 16px; }
+            
+            /* 指标卡片 - 手机端2列 */
+            .metrics-grid { 
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 12px;
+                margin-bottom: 24px;
+            }
+            
+            .metric-card { padding: 16px 12px; }
+            .metric-title { font-size: 12px; margin-bottom: 8px; }
+            .metric-value { font-size: 22px; margin-bottom: 4px; }
+            .metric-sub { font-size: 10px; }
+            
+            /* 最后一个卡片占满宽度 */
+            .metric-card:last-child:nth-child(odd) {
+                grid-column: 1 / -1;
+            }
+            
+            /* 排行榜 */
+            .section-title { font-size: 18px; margin-bottom: 16px; }
+            
+            .ranking-panel { padding: 16px; margin-bottom: 20px; }
+            
+            .ranking-header { 
+                flex-direction: column; 
+                align-items: stretch;
+                gap: 12px;
+            }
+            
+            .ranking-title { 
+                font-size: 15px;
+                justify-content: center;
+            }
+            
+            .ranking-toolbar { 
+                width: 100%;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .search-box { 
+                flex: 1;
+                min-width: 120px;
+                font-size: 14px;
+                padding: 10px 12px;
+            }
+            
+            .btn { 
+                flex: 1;
+                min-width: 80px;
+                justify-content: center;
+                padding: 10px 12px;
+                font-size: 12px;
+            }
+            
+            /* 表格优化 */
+            .ranking-table-wrapper { 
+                max-height: 400px;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .ranking-table { 
+                min-width: 700px;
+                font-size: 12px;
+            }
+            
+            .ranking-table th,
+            .ranking-table td { 
+                padding: 10px 8px;
+                white-space: nowrap;
+            }
+            
+            .ranking-table th { font-size: 11px; }
+            
+            .rank-badge { width: 22px; height: 22px; font-size: 11px; }
+            
+            /* 导入区域 */
+            .import-section { padding: 16px; }
+            
+            .upload-area { padding: 30px 16px; }
+            .upload-icon { font-size: 36px; margin-bottom: 10px; }
+            .upload-text { font-size: 14px; }
+            .upload-hint { font-size: 12px; }
+            
+            .file-item { 
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .match-config { padding: 16px; }
+            .match-fields { grid-template-columns: 1fr; gap: 12px; }
+            
+            .config-title { font-size: 14px; }
+            
+            .result-stats { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+            .stat-value { font-size: 20px; }
+            .stat-label { font-size: 11px; }
+            
+            .data-preview { padding: 12px; }
+            .preview-table { font-size: 11px; }
+            .preview-table th,
+            .preview-table td { padding: 8px 6px; }
+        }
+
+        /* 超小屏幕（iPhone SE等） */
+        @media (max-width: 375px) {
+            .metrics-grid { grid-template-columns: 1fr; }
+            
+            .metric-card:last-child:nth-child(odd) {
+                grid-column: auto;
+            }
+            
+            .ranking-toolbar {
+                flex-direction: column;
+            }
+            
+            .btn { width: 100%; }
+            
+            .result-stats { grid-template-columns: 1fr; }
+        }
+
+        /* 触摸优化 */
+        @media (hover: none) and (pointer: coarse) {
+            .metric-card:hover { transform: none; }
+            .btn:hover { transform: none; }
+            
+            .ranking-table th,
+            .ranking-table td {
+                min-height: 44px;
+            }
+            
+            .btn {
+                min-height: 44px;
+            }
+            
+            .search-box {
+                min-height: 44px;
+            }
+        }
+
+        /* 横屏优化 */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .header { padding: 12px 16px; }
+            .header h1 { font-size: 18px; }
+            .content { padding: 12px; }
+            .metrics-grid { margin-bottom: 16px; }
+            .ranking-panel { margin-bottom: 12px; }
+        }
+
+        /* 排序方向指示 */
+        .sort-asc::after { content: ' ↑'; color: #2563eb; }
+        .sort-desc::after { content: ' ↓'; color: #2563eb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>企业微信使用情况通报工作台</h1>
+            <p>实时数据监控与多维度排行榜 · 支持多表智能匹配</p>
+        </div>
+
+        <div class="content">
+            <!-- ===== 五个核心指标卡片 - 横排 ===== -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-title">当月购物企微添加数量</div>
+                    <div class="metric-value" id="metric-shopping">0</div>
+                    <div class="metric-sub">较上月 <span id="trend-shopping" class="metric-trend-up">+12.5%</span></div>
+                </div>
+                <div class="metric-card accent-green">
+                    <div class="metric-title">老客添加数量</div>
+                    <div class="metric-value" id="metric-old-customer">0</div>
+                    <div class="metric-sub">较上月 <span id="trend-old" class="metric-trend-up">+8.3%</span></div>
+                </div>
+                <div class="metric-card accent-purple">
+                    <div class="metric-title">潜客添加数量</div>
+                    <div class="metric-value" id="metric-potential">0</div>
+                    <div class="metric-sub">较上月 <span id="trend-potential" class="metric-trend-up">+15.2%</span></div>
+                </div>
+                <div class="metric-card accent-orange">
+                    <div class="metric-title">留资成交金额</div>
+                    <div class="metric-value" id="metric-transaction">¥0</div>
+                    <div class="metric-sub">到店礼 <span id="metric-store-gift">¥0</span> | 老带新 <span id="metric-referral">¥0</span></div>
+                </div>
+                <div class="metric-card accent-pink">
+                    <div class="metric-title">待办任务完成率</div>
+                    <div class="metric-value" id="metric-task-rate">0%</div>
+                    <div class="metric-sub">已完成 <span id="metric-task-done">0</span> / 总计 <span id="metric-task-total">0</span></div>
+                </div>
+            </div>
+
+            <!-- ===== 四个排行榜 - 独立展示 ===== -->
+            <div class="rankings-section">
+                <div class="section-title">排行榜</div>
+
+                <!-- 门店排行榜 -->
+                <div class="ranking-panel" id="panel-store">
+                    <div class="ranking-header">
+                        <div class="ranking-title">
+                            <span class="icon">🏪</span>
+                            <span>门店排行榜</span>
+                        </div>
+                        <div class="ranking-toolbar">
+                            <input type="text" class="search-box" placeholder="搜索门店..." oninput="filterRanking('store', this.value)">
+                            <button class="btn btn-warning btn-small" onclick="scrollToBottom('store')">📋 查看末尾</button>
+                            <button class="btn btn-primary btn-small" onclick="exportToImage('store')">📷 导出图片</button>
+                            <button class="btn btn-secondary btn-small" onclick="exportToExcel('store')">📊 导出Excel</button>
+                        </div>
+                    </div>
+                    <div class="ranking-table-wrapper" id="wrapper-store">
+                        <table class="ranking-table" id="table-store">
+                            <thead id="thead-store"></thead>
+                            <tbody id="tbody-store"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 区域排行榜 -->
+                <div class="ranking-panel" id="panel-region">
+                    <div class="ranking-header">
+                        <div class="ranking-title">
+                            <span class="icon">🗺️</span>
+                            <span>区域排行榜</span>
+                        </div>
+                        <div class="ranking-toolbar">
+                            <input type="text" class="search-box" placeholder="搜索区域..." oninput="filterRanking('region', this.value)">
+                            <button class="btn btn-warning btn-small" onclick="scrollToBottom('region')">📋 查看末尾</button>
+                            <button class="btn btn-primary btn-small" onclick="exportToImage('region')">📷 导出图片</button>
+                            <button class="btn btn-secondary btn-small" onclick="exportToExcel('region')">📊 导出Excel</button>
+                        </div>
+                    </div>
+                    <div class="ranking-table-wrapper" id="wrapper-region">
+                        <table class="ranking-table" id="table-region">
+                            <thead id="thead-region"></thead>
+                            <tbody id="tbody-region"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 导购排行榜 -->
+                <div class="ranking-panel" id="panel-sales">
+                    <div class="ranking-header">
+                        <div class="ranking-title">
+                            <span class="icon">👤</span>
+                            <span>导购排行榜</span>
+                        </div>
+                        <div class="ranking-toolbar">
+                            <input type="text" class="search-box" placeholder="搜索导购..." oninput="filterRanking('sales', this.value)">
+                            <button class="btn btn-warning btn-small" onclick="scrollToBottom('sales')">📋 查看末尾</button>
+                            <button class="btn btn-primary btn-small" onclick="exportToImage('sales')">📷 导出图片</button>
+                            <button class="btn btn-secondary btn-small" onclick="exportToExcel('sales')">📊 导出Excel</button>
+                        </div>
+                    </div>
+                    <div class="ranking-table-wrapper" id="wrapper-sales">
+                        <table class="ranking-table" id="table-sales">
+                            <thead id="thead-sales"></thead>
+                            <tbody id="tbody-sales"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 督导排行榜 -->
+                <div class="ranking-panel" id="panel-supervisor">
+                    <div class="ranking-header">
+                        <div class="ranking-title">
+                            <span class="icon">👔</span>
+                            <span>督导排行榜</span>
+                        </div>
+                        <div class="ranking-toolbar">
+                            <input type="text" class="search-box" placeholder="搜索督导..." oninput="filterRanking('supervisor', this.value)">
+                            <button class="btn btn-warning btn-small" onclick="scrollToBottom('supervisor')">📋 查看末尾</button>
+                            <button class="btn btn-primary btn-small" onclick="exportToImage('supervisor')">📷 导出图片</button>
+                            <button class="btn btn-secondary btn-small" onclick="exportToExcel('supervisor')">📊 导出Excel</button>
+                        </div>
+                    </div>
+                    <div class="ranking-table-wrapper" id="wrapper-supervisor">
+                        <table class="ranking-table" id="table-supervisor">
+                            <thead id="thead-supervisor"></thead>
+                            <tbody id="tbody-supervisor"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 数据导入区域 ===== -->
+            <div class="import-section">
+                <div class="section-title">数据导入与智能匹配</div>
+                <div class="upload-area" onclick="document.getElementById('file-input').click()">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">点击选择文件或拖拽文件到此处</div>
+                    <div class="upload-hint">支持多个 Excel 文件（.xlsx, .xls），系统将自动识别并匹配关联数据</div>
+                </div>
+                <input type="file" id="file-input" class="file-input" accept=".xlsx,.xls" multiple onchange="handleFileUpload(event)">
+                <div class="file-queue" id="file-queue"></div>
+                <div class="match-config" id="match-config" style="display:none;">
+                    <div class="config-title"><span>⚙️</span><span>智能匹配配置</span></div>
+                    <p style="font-size:13px;color:#64748b;margin-bottom:16px;">系统已自动识别以下字段作为匹配键，您可以调整匹配关系：</p>
+                    <div class="match-fields" id="match-fields"></div>
+                    <button class="btn btn-primary" onclick="executeMatch()"><span>🔗</span> 执行数据匹配</button>
+                </div>
+                <div class="match-result" id="match-result"></div>
+                <div class="data-preview" id="data-preview">
+                    <table class="preview-table" id="preview-table"></table>
+                </div>
+                <div class="import-status" id="import-status"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== 数据存储 =====
+        let rawData = {
+            metrics: { shopping: 0, oldCustomer: 0, potential: 0, transaction: 0, storeGift: 0, referral: 0, taskDone: 0, taskTotal: 0 },
+            rankings: { store: [], region: [], sales: [], supervisor: [] }
+        };
+
+        // 排序状态 { dimension: { field, direction } }
+        let sortState = {};
+
+        // 文件相关
+        let uploadedFiles = [];
+        let parsedData = {};
+        let matchConfig = {};
+
+        // 字段映射
+        const fieldMappings = {
+            storeId: ['门店ID', '门店id', 'storeId', 'store_id', '门店编号'],
+            storeName: ['门店名称', '门店', 'storeName', 'store_name', '门店名'],
+            regionId: ['区域ID', '区域id', 'regionId', 'region_id', '区域编号'],
+            regionName: ['区域名称', '区域', 'regionName', 'region_name', '区域名'],
+            salesId: ['导购ID', '导购id', 'salesId', 'sales_id', '导购员ID', '员工ID'],
+            salesName: ['导购姓名', '导购', 'salesName', 'sales_name', '导购员', '员工姓名'],
+            supervisorId: ['督导ID', '督导id', 'supervisorId', 'supervisor_id'],
+            supervisorName: ['督导姓名', '督导', 'supervisorName', 'supervisor_name'],
+            shopping: ['购物企微添加', '购物企微添加数量', 'shopping', '企微添加'],
+            oldCustomer: ['老客添加', '老客添加数量', 'oldCustomer', '老客'],
+            potential: ['潜客添加', '潜客添加数量', 'potential', '潜客'],
+            transaction: ['成交金额', '留资成交金额', 'transaction', '成交额'],
+            storeGift: ['到店礼成交', '到店礼成交金额', 'storeGift'],
+            referral: ['老带新成交', '老带新成交金额', 'referral'],
+            taskDone: ['待办完成', '已完成任务', 'taskDone', '已完成'],
+            taskTotal: ['待办总数', '总任务', 'taskTotal', '任务总数']
+        };
+
+        // ===== 初始化示例数据 =====
+        function initSampleData() {
+            rawData.metrics = {
+                shopping: 1250, oldCustomer: 890, potential: 2340,
+                transaction: 1568000, storeGift: 980000, referral: 588000,
+                taskDone: 186, taskTotal: 230
+            };
+
+            rawData.rankings.store = [
+                { name: '旗舰店A', shopping: 320, oldCustomer: 180, potential: 450, transaction: 320000, storeGift: 200000, referral: 120000, taskDone: 45, taskTotal: 50 },
+                { name: '旗舰店B', shopping: 280, oldCustomer: 160, potential: 380, transaction: 280000, storeGift: 170000, referral: 110000, taskDone: 42, taskTotal: 48 },
+                { name: '标准店C', shopping: 240, oldCustomer: 140, potential: 320, transaction: 240000, storeGift: 150000, referral: 90000, taskDone: 38, taskTotal: 45 },
+                { name: '标准店D', shopping: 210, oldCustomer: 120, potential: 290, transaction: 210000, storeGift: 130000, referral: 80000, taskDone: 35, taskTotal: 42 },
+                { name: '社区店E', shopping: 200, oldCustomer: 110, potential: 260, transaction: 180000, storeGift: 110000, referral: 70000, taskDone: 30, taskTotal: 40 },
+                { name: '社区店F', shopping: 180, oldCustomer: 95, potential: 230, transaction: 156000, storeGift: 95000, referral: 61000, taskDone: 28, taskTotal: 38 },
+                { name: '社区店G', shopping: 160, oldCustomer: 85, potential: 200, transaction: 138000, storeGift: 85000, referral: 53000, taskDone: 25, taskTotal: 35 },
+                { name: '便利店H', shopping: 140, oldCustomer: 70, potential: 180, transaction: 120000, storeGift: 72000, referral: 48000, taskDone: 22, taskTotal: 32 }
+            ];
+
+            rawData.rankings.region = [
+                { name: '华东区', shopping: 580, oldCustomer: 340, potential: 720, transaction: 580000, storeGift: 360000, referral: 220000, taskDone: 85, taskTotal: 100 },
+                { name: '华南区', shopping: 420, oldCustomer: 280, potential: 560, transaction: 450000, storeGift: 280000, referral: 170000, taskDone: 68, taskTotal: 80 },
+                { name: '华北区', shopping: 250, oldCustomer: 170, potential: 380, transaction: 320000, storeGift: 200000, referral: 120000, taskDone: 48, taskTotal: 60 },
+                { name: '西南区', shopping: 180, oldCustomer: 100, potential: 240, transaction: 218000, storeGift: 140000, referral: 78000, taskDone: 32, taskTotal: 45 }
+            ];
+
+            rawData.rankings.sales = [
+                { name: '张三', store: '旗舰店A', shopping: 85, oldCustomer: 52, potential: 120, transaction: 95000, storeGift: 60000, referral: 35000, taskDone: 18, taskTotal: 20 },
+                { name: '李四', store: '旗舰店B', shopping: 78, oldCustomer: 48, potential: 105, transaction: 88000, storeGift: 55000, referral: 33000, taskDone: 16, taskTotal: 18 },
+                { name: '王五', store: '标准店C', shopping: 72, oldCustomer: 45, potential: 98, transaction: 82000, storeGift: 50000, referral: 32000, taskDone: 15, taskTotal: 18 },
+                { name: '赵六', store: '旗舰店A', shopping: 68, oldCustomer: 40, potential: 90, transaction: 76000, storeGift: 48000, referral: 28000, taskDone: 14, taskTotal: 16 },
+                { name: '钱七', store: '标准店D', shopping: 62, oldCustomer: 35, potential: 82, transaction: 68000, storeGift: 42000, referral: 26000, taskDone: 12, taskTotal: 15 },
+                { name: '孙八', store: '社区店E', shopping: 55, oldCustomer: 30, potential: 75, transaction: 60000, storeGift: 38000, referral: 22000, taskDone: 10, taskTotal: 14 },
+                { name: '周九', store: '社区店F', shopping: 48, oldCustomer: 25, potential: 65, transaction: 52000, storeGift: 32000, referral: 20000, taskDone: 9, taskTotal: 12 },
+                { name: '吴十', store: '便利店H', shopping: 42, oldCustomer: 20, potential: 55, transaction: 45000, storeGift: 28000, referral: 17000, taskDone: 8, taskTotal: 11 }
+            ];
+
+            rawData.rankings.supervisor = [
+                { name: '赵督导', region: '华东区', stores: 8, shopping: 280, oldCustomer: 160, potential: 350, transaction: 280000, storeGift: 175000, referral: 105000, taskDone: 42, taskTotal: 48 },
+                { name: '钱督导', region: '华南区', stores: 6, shopping: 210, oldCustomer: 130, potential: 280, transaction: 220000, storeGift: 138000, referral: 82000, taskDone: 35, taskTotal: 42 },
+                { name: '孙督导', region: '华北区', stores: 5, shopping: 160, oldCustomer: 95, potential: 210, transaction: 170000, storeGift: 106000, referral: 64000, taskDone: 28, taskTotal: 35 },
+                { name: '李督导', region: '西南区', stores: 4, shopping: 120, oldCustomer: 70, potential: 160, transaction: 128000, storeGift: 80000, referral: 48000, taskDone: 20, taskTotal: 28 }
+            ];
+
+            updateMetrics();
+            renderAllRankings();
+        }
+
+        // ===== 更新指标卡片 =====
+        function updateMetrics() {
+            const m = rawData.metrics;
+            document.getElementById('metric-shopping').textContent = m.shopping.toLocaleString();
+            document.getElementById('metric-old-customer').textContent = m.oldCustomer.toLocaleString();
+            document.getElementById('metric-potential').textContent = m.potential.toLocaleString();
+            document.getElementById('metric-transaction').textContent = '¥' + m.transaction.toLocaleString();
+            document.getElementById('metric-store-gift').textContent = '¥' + m.storeGift.toLocaleString();
+            document.getElementById('metric-referral').textContent = '¥' + m.referral.toLocaleString();
+
+            const taskRate = m.taskTotal > 0 ? Math.round((m.taskDone / m.taskTotal) * 100) : 0;
+            document.getElementById('metric-task-rate').textContent = taskRate + '%';
+            document.getElementById('metric-task-done').textContent = m.taskDone;
+            document.getElementById('metric-task-total').textContent = m.taskTotal;
+        }
+
+        // ===== 渲染所有排行榜 =====
+        function renderAllRankings() {
+            ['store', 'region', 'sales', 'supervisor'].forEach(dim => renderRanking(dim));
+        }
+
+        // ===== 渲染单个排行榜 =====
+        function renderRanking(dimension, dataOverride) {
+            let data = dataOverride || rawData.rankings[dimension];
+            const thead = document.getElementById('thead-' + dimension);
+            const tbody = document.getElementById('tbody-' + dimension);
+
+            // 列定义
+            const columns = getColumns(dimension);
+
+            // 应用排序
+            const sort = sortState[dimension];
+            if (sort && sort.field) {
+                data = [...data].sort((a, b) => {
+                    let va = getFieldValue(a, sort.field, dimension);
+                    let vb = getFieldValue(b, sort.field, dimension);
+                    if (typeof va === 'string') {
+                        return sort.direction === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+                    }
+                    return sort.direction === 'asc' ? va - vb : vb - va;
+                });
+            }
+
+            // 渲染表头
+            thead.innerHTML = '<tr>' + columns.map(col => {
+                const isActive = sort && sort.field === col.key;
+                const dirClass = isActive ? (sort.direction === 'asc' ? 'sort-asc' : 'sort-desc') : '';
+                return `<th class="${isActive ? 'sort-active' : ''} ${dirClass}" onclick="sortRanking('${dimension}', '${col.key}')">${col.label} <span class="sort-icon">⇅</span></th>`;
+            }).join('') + '</tr>';
+
+            // 渲染表体
+            tbody.innerHTML = data.map((item, index) => {
+                const rank = index + 1;
+                let rankClass = rank <= 3 ? 'rank-' + rank : 'rank-other';
+
+                return '<tr>' + columns.map(col => {
+                    if (col.key === 'rank') {
+                        return `<td><span class="rank-badge ${rankClass}">${rank}</span></td>`;
+                    }
+                    if (col.key === 'transaction') {
+                        const storeGift = item.storeGift || 0;
+                        const referral = item.referral || 0;
+                        return `<td class="amount-cell">¥${(item.transaction || 0).toLocaleString()}<div class="amount-detail">到店礼：¥${storeGift.toLocaleString()}<br>老带新：¥${referral.toLocaleString()}</div></td>`;
+                    }
+                    if (col.key === 'taskRate') {
+                        const done = item.taskDone || 0;
+                        const total = item.taskTotal || 0;
+                        const rate = total > 0 ? Math.round((done / total) * 100) : 0;
+                        const color = rate >= 80 ? '#10b981' : rate >= 60 ? '#f59e0b' : '#ef4444';
+                        return `<td style="color:${color};font-weight:600;">${rate}%</td>`;
+                    }
+                    const val = getFieldValue(item, col.key, dimension);
+                    if (typeof val === 'number') {
+                        return `<td>${val.toLocaleString()}</td>`;
+                    }
+                    return `<td>${val || '-'}</td>`;
+                }).join('') + '</tr>';
+            }).join('');
+        }
+
+        // 获取列定义
+        function getColumns(dimension) {
+            const base = [{ key: 'rank', label: '排名' }];
+            const metrics = [
+                { key: 'shopping', label: '购物企微添加' },
+                { key: 'oldCustomer', label: '老客添加' },
+                { key: 'potential', label: '潜客添加' },
+                { key: 'transaction', label: '留资成交金额' },
+                { key: 'taskRate', label: '待办任务完成率' }
+            ];
+
+            if (dimension === 'store') {
+                return [...base, { key: 'name', label: '门店名称' }, ...metrics];
+            } else if (dimension === 'region') {
+                return [...base, { key: 'name', label: '区域名称' }, ...metrics];
+            } else if (dimension === 'sales') {
+                return [...base, { key: 'name', label: '导购姓名' }, { key: 'store', label: '所属门店' }, ...metrics];
+            } else if (dimension === 'supervisor') {
+                return [...base, { key: 'name', label: '督导姓名' }, { key: 'region', label: '负责区域' }, { key: 'stores', label: '管辖门店' }, ...metrics];
+            }
+            return base;
+        }
+
+        // 获取字段值
+        function getFieldValue(item, key, dimension) {
+            if (key === 'taskRate') {
+                const done = item.taskDone || 0;
+                const total = item.taskTotal || 0;
+                return total > 0 ? Math.round((done / total) * 100) : 0;
+            }
+            return item[key];
+        }
+
+        // ===== 排序功能 =====
+        function sortRanking(dimension, field) {
+            const current = sortState[dimension];
+            if (current && current.field === field) {
+                // 切换方向：desc -> asc -> 取消
+                if (current.direction === 'desc') {
+                    sortState[dimension] = { field, direction: 'asc' };
+                } else {
+                    delete sortState[dimension];
+                }
+            } else {
+                sortState[dimension] = { field, direction: 'desc' };
+            }
+            renderRanking(dimension);
+        }
+
+        // ===== 搜索过滤 =====
+        function filterRanking(dimension, keyword) {
+            if (!keyword) {
+                renderRanking(dimension);
+                return;
+            }
+            const kw = keyword.toLowerCase();
+            const filtered = rawData.rankings[dimension].filter(item => {
+                if (dimension === 'store' || dimension === 'region') return item.name.toLowerCase().includes(kw);
+                if (dimension === 'sales') return item.name.toLowerCase().includes(kw) || (item.store || '').toLowerCase().includes(kw);
+                if (dimension === 'supervisor') return item.name.toLowerCase().includes(kw) || (item.region || '').toLowerCase().includes(kw);
+                return false;
+            });
+            renderRanking(dimension, filtered);
+        }
+
+        // ===== 查看末尾 =====
+        function scrollToBottom(dimension) {
+            const wrapper = document.getElementById('wrapper-' + dimension);
+            wrapper.scrollTop = wrapper.scrollHeight;
+        }
+
+        // ===== 导出图片 =====
+        function exportToImage(dimension) {
+            const wrapper = document.getElementById('wrapper-' + dimension);
+            html2canvas(wrapper, { backgroundColor: '#ffffff' }).then(canvas => {
+                const link = document.createElement('a');
+                const dimNames = { store: '门店', region: '区域', sales: '导购', supervisor: '督导' };
+                link.download = `${dimNames[dimension]}排行榜-${new Date().toLocaleDateString()}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+        // ===== 导出Excel =====
+        function exportToExcel(dimension) {
+            const data = rawData.rankings[dimension];
+            const columns = getColumns(dimension);
+            const headers = columns.map(c => c.label);
+            const dimNames = { store: '门店', region: '区域', sales: '导购', supervisor: '督导' };
+
+            const rows = data.map((item, idx) => {
+                return columns.map(col => {
+                    if (col.key === 'rank') return idx + 1;
+                    if (col.key === 'transaction') return item.transaction || 0;
+                    if (col.key === 'taskRate') {
+                        const done = item.taskDone || 0;
+                        const total = item.taskTotal || 0;
+                        return total > 0 ? Math.round((done / total) * 100) + '%' : '0%';
+                    }
+                    const val = item[col.key];
+                    return typeof val === 'number' ? val : (val || '-');
+                });
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, dimNames[dimension] + '排行榜');
+            XLSX.writeFile(wb, `${dimNames[dimension]}排行榜-${new Date().toLocaleDateString()}.xlsx`);
+        }
+
+        // ===== 文件上传处理 =====
+        function handleFileUpload(event) {
+            const files = Array.from(event.target.files);
+            files.forEach(file => {
+                if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                    addToQueue(file);
+                }
+            });
+            event.target.value = '';
+        }
+
+        function addToQueue(file) {
+            const fileId = Date.now() + Math.random();
+            uploadedFiles.push({ id: fileId, file, name: file.name, size: (file.size / 1024).toFixed(1) + ' KB', status: 'pending' });
+            renderFileQueue();
+            parseFile(uploadedFiles[uploadedFiles.length - 1]);
+        }
+
+        function renderFileQueue() {
+            document.getElementById('file-queue').innerHTML = uploadedFiles.map(item => `
+                <div class="file-item">
+                    <div>
+                        <div class="file-name">${item.name}</div>
+                        <div class="file-meta">${item.size} · ${item.status === 'pending' ? '解析中...' : item.status === 'success' ? '✓ 解析成功' : '✗ 解析失败'}</div>
+                    </div>
+                    <button class="btn btn-small btn-danger" onclick="removeFile(${item.id})">删除</button>
+                </div>
+            `).join('');
+        }
+
+        function removeFile(fileId) {
+            uploadedFiles = uploadedFiles.filter(f => f.id !== fileId);
+            delete parsedData[fileId];
+            renderFileQueue();
+            updateMatchConfig();
+        }
+
+        function parseFile(fileItem) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                    parsedData[fileItem.id] = { data: jsonData, headers: jsonData.length > 0 ? Object.keys(jsonData[0]) : [], fileName: fileItem.name };
+                    fileItem.status = 'success';
+                    renderFileQueue();
+                    updateMatchConfig();
+                } catch (error) {
+                    fileItem.status = 'error';
+                    renderFileQueue();
+                }
+            };
+            reader.readAsArrayBuffer(fileItem.file);
+        }
+
+        // ===== 匹配配置 =====
+        function updateMatchConfig() {
+            const configDiv = document.getElementById('match-config');
+            const fieldsDiv = document.getElementById('match-fields');
+            const parsedFiles = Object.values(parsedData);
+
+            if (parsedFiles.length < 2) { configDiv.style.display = 'none'; return; }
+            configDiv.style.display = 'block';
+
+            const allHeaders = new Set();
+            parsedFiles.forEach(pd => pd.headers.forEach(h => allHeaders.add(h)));
+            const headers = Array.from(allHeaders);
+
+            const suggestions = [
+                { field: 'store', label: '门店匹配字段', mappings: fieldMappings.storeId.concat(fieldMappings.storeName) },
+                { field: 'region', label: '区域匹配字段', mappings: fieldMappings.regionId.concat(fieldMappings.regionName) },
+                { field: 'sales', label: '导购匹配字段', mappings: fieldMappings.salesId.concat(fieldMappings.salesName) },
+                { field: 'supervisor', label: '督导匹配字段', mappings: fieldMappings.supervisorId.concat(fieldMappings.supervisorName) }
+            ];
+
+            fieldsDiv.innerHTML = suggestions.map(s => {
+                const matched = headers.find(h => s.mappings.includes(h));
+                return `<div class="field-group">
+                    <div class="field-label">${s.label}</div>
+                    <select class="field-select" data-field="${s.field}" onchange="matchConfig['${s.field}']=this.value">
+                        <option value="">-- 选择匹配字段 --</option>
+                        ${headers.map(h => `<option value="${h}" ${h === matched ? 'selected' : ''}>${h}</option>`).join('')}
+                    </select>
+                </div>`;
+            }).join('');
+        }
+
+        // ===== 执行数据匹配 =====
+        function executeMatch() {
+            if (Object.keys(parsedData).length < 2) {
+                showMatchResult('error', '请至少导入两个文件进行匹配');
+                return;
+            }
+            try {
+                const mergedData = mergeTables();
+                processMergedData(mergedData);
+                showMatchResult('success', '数据匹配成功', mergedData);
+                showDataPreview(mergedData);
+                updateMetrics();
+                renderAllRankings();
+            } catch (error) {
+                showMatchResult('error', '数据匹配失败：' + error.message);
+            }
+        }
+
+        function mergeTables() {
+            const tables = Object.values(parsedData);
+            if (tables.length === 0) return [];
+            let mainTable = tables.reduce((a, b) => a.data.length > b.data.length ? a : b);
+            let merged = mainTable.data.map(row => ({ ...row }));
+
+            tables.forEach(table => {
+                if (table === mainTable) return;
+                const joinKey = findJoinKey(Object.keys(merged[0] || {}), table.headers);
+                if (!joinKey) return;
+                const index = {};
+                table.data.forEach(row => { const k = row[joinKey]; if (k != null) index[k] = row; });
+                merged = merged.map(row => {
+                    const matchRow = index[row[joinKey]];
+                    if (matchRow) {
+                        const r = { ...row };
+                        Object.keys(matchRow).forEach(k => { if (!(k in r)) r[k] = matchRow[k]; });
+                        return r;
+                    }
+                    return row;
+                });
+            });
+            return merged;
+        }
+
+        function findJoinKey(h1, h2) {
+            const priorities = ['门店ID', '门店id', 'storeId', '导购ID', '导购id', 'salesId', '区域ID', '区域id', 'regionId', '门店名称', '门店', '导购姓名', '导购', '区域名称', '区域'];
+            for (let p of priorities) { if (h1.includes(p) && h2.includes(p)) return p; }
+            for (let h of h1) { if (h2.includes(h)) return h; }
+            return null;
+        }
+
+        function processMergedData(mergedData) {
+            rawData.metrics = { shopping: 0, oldCustomer: 0, potential: 0, transaction: 0, storeGift: 0, referral: 0, taskDone: 0, taskTotal: 0 };
+            rawData.rankings = { store: {}, region: {}, sales: {}, supervisor: {} };
+
+            mergedData.forEach(row => {
+                const store = findVal(row, fieldMappings.storeName) || findVal(row, fieldMappings.storeId) || '';
+                const region = findVal(row, fieldMappings.regionName) || findVal(row, fieldMappings.regionId) || '';
+                const sales = findVal(row, fieldMappings.salesName) || findVal(row, fieldMappings.salesId) || '';
+                const supervisor = findVal(row, fieldMappings.supervisorName) || findVal(row, fieldMappings.supervisorId) || '';
+                const shopping = parseFloat(findVal(row, fieldMappings.shopping) || 0);
+                const oldCustomer = parseFloat(findVal(row, fieldMappings.oldCustomer) || 0);
+                const potential = parseFloat(findVal(row, fieldMappings.potential) || 0);
+                const transaction = parseFloat(findVal(row, fieldMappings.transaction) || 0);
+                const storeGift = parseFloat(findVal(row, fieldMappings.storeGift) || 0);
+                const referral = parseFloat(findVal(row, fieldMappings.referral) || 0);
+                const taskDone = parseFloat(findVal(row, fieldMappings.taskDone) || 0);
+                const taskTotal = parseFloat(findVal(row, fieldMappings.taskTotal) || 0);
+
+                rawData.metrics.shopping += shopping;
+                rawData.metrics.oldCustomer += oldCustomer;
+                rawData.metrics.potential += potential;
+                rawData.metrics.transaction += transaction;
+                rawData.metrics.storeGift += storeGift;
+                rawData.metrics.referral += referral;
+                rawData.metrics.taskDone += taskDone;
+                rawData.metrics.taskTotal += taskTotal;
+
+                if (store) {
+                    if (!rawData.rankings.store[store]) rawData.rankings.store[store] = { name: store, shopping: 0, oldCustomer: 0, potential: 0, transaction: 0, storeGift: 0, referral: 0, taskDone: 0, taskTotal: 0 };
+                    const s = rawData.rankings.store[store];
+                    s.shopping += shopping; s.oldCustomer += oldCustomer; s.potential += potential;
+                    s.transaction += transaction; s.storeGift += storeGift; s.referral += referral;
+                    s.taskDone += taskDone; s.taskTotal += taskTotal;
+                }
+                if (region) {
+                    if (!rawData.rankings.region[region]) rawData.rankings.region[region] = { name: region, shopping: 0, oldCustomer: 0, potential: 0, transaction: 0, storeGift: 0, referral: 0, taskDone: 0, taskTotal: 0 };
+                    const r = rawData.rankings.region[region];
+                    r.shopping += shopping; r.oldCustomer += oldCustomer; r.potential += potential;
+                    r.transaction += transaction; r.storeGift += storeGift; r.referral += referral;
+                    r.taskDone += taskDone; r.taskTotal += taskTotal;
+                }
+                if (sales) {
+                    if (!rawData.rankings.sales[sales]) rawData.rankings.sales[sales] = { name: sales, store: store, shopping: 0, oldCustomer: 0, potential: 0, transaction: 0, storeGift: 0, referral: 0, taskDone: 0, taskTotal: 0 };
+                    const sa = rawData.rankings.sales[sales];
+                    sa.shopping += shopping; sa.oldCustomer += oldCustomer; sa.potential += potential;
+                    sa.transaction += transaction; sa.storeGift += storeGift; sa.referral += referral;
+                    sa.taskDone += taskDone; sa.taskTotal += taskTotal;
+                }
+                if (supervisor) {
+                    if (!rawData.rankings.supervisor[supervisor]) rawData.rankings.supervisor[supervisor] = { name: supervisor, region: region, stores: new Set(), shopping: 0, oldCustomer: 0, potential: 0, transaction: 0, storeGift: 0, referral: 0, taskDone: 0, taskTotal: 0 };
+                    const su = rawData.rankings.supervisor[supervisor];
+                    if (store) su.stores.add(store);
+                    su.shopping += shopping; su.oldCustomer += oldCustomer; su.potential += potential;
+                    su.transaction += transaction; su.storeGift += storeGift; su.referral += referral;
+                    su.taskDone += taskDone; su.taskTotal += taskTotal;
+                }
+            });
+
+            rawData.rankings.store = Object.values(rawData.rankings.store).sort((a, b) => b.transaction - a.transaction);
+            rawData.rankings.region = Object.values(rawData.rankings.region).sort((a, b) => b.transaction - a.transaction);
+            rawData.rankings.sales = Object.values(rawData.rankings.sales).sort((a, b) => b.transaction - a.transaction);
+            rawData.rankings.supervisor = Object.values(rawData.rankings.supervisor).map(s => ({ ...s, stores: s.stores.size })).sort((a, b) => b.transaction - a.transaction);
+        }
+
+        function findVal(row, mappings) {
+            for (let m of mappings) { if (row[m] !== undefined && row[m] !== null && row[m] !== '') return row[m]; }
+            return null;
+        }
+
+        function showMatchResult(type, message, data) {
+            const div = document.getElementById('match-result');
+            div.className = 'match-result ' + type;
+            let content = `<div style="font-weight:600;margin-bottom:8px;">${message}</div>`;
+            if (type === 'success' && data) {
+                content += `<div class="result-stats">
+                    <div class="stat-item"><div class="stat-value">${data.length}</div><div class="stat-label">匹配记录数</div></div>
+                    <div class="stat-item"><div class="stat-value">${data.length > 0 ? Object.keys(data[0]).length : 0}</div><div class="stat-label">整合字段数</div></div>
+                    <div class="stat-item"><div class="stat-value">${Object.keys(parsedData).length}</div><div class="stat-label">关联表格数</div></div>
+                </div>`;
+            }
+            div.innerHTML = content;
+        }
+
+        function showDataPreview(data) {
+            const div = document.getElementById('data-preview');
+            const table = document.getElementById('preview-table');
+            if (data.length === 0) { div.style.display = 'none'; return; }
+            div.style.display = 'block';
+            const headers = Object.keys(data[0]);
+            const preview = data.slice(0, 20);
+            table.innerHTML = `<thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+                <tbody>${preview.map(row => `<tr>${headers.map(h => `<td>${row[h] || '-'}</td>`).join('')}</tr>`).join('')}</tbody>`;
+        }
+
+        // 初始化
+        initSampleData();
+        
+        // ===== 微信端专属功能 =====
+        (function() {
+            // 检测是否在微信环境
+            const isWechat = /MicroMessenger/i.test(navigator.userAgent);
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            
+            // 微信分享配置
+            if (isWechat && typeof wx !== 'undefined') {
+                wx.ready(function() {
+                    wx.updateAppMessageShareData({
+                        title: '企业微信使用情况通报工作台',
+                        desc: '实时查看企微数据与排行榜',
+                        link: window.location.href,
+                        imgUrl: window.location.origin + '/favicon.ico'
+                    });
+                    
+                    wx.updateTimelineShareData({
+                        title: '企业微信使用情况通报工作台 - 实时数据监控',
+                        link: window.location.href,
+                        imgUrl: window.location.origin + '/favicon.ico'
+                    });
+                });
+            }
+            
+            // 返回顶部按钮
+            const backToTopBtn = document.createElement('div');
+            backToTopBtn.innerHTML = '↑';
+            backToTopBtn.style.cssText = `
+                position: fixed;
+                bottom: 80px;
+                right: 20px;
+                width: 44px;
+                height: 44px;
+                background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+                color: white;
+                border-radius: 50%;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+                font-weight: bold;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+                z-index: 1000;
+                transition: all 0.3s;
+            `;
+            document.body.appendChild(backToTopBtn);
+            
+            backToTopBtn.addEventListener('click', function() {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+            
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300) {
+                    backToTopBtn.style.display = 'flex';
+                } else {
+                    backToTopBtn.style.display = 'none';
+                }
+            });
+            
+            // 数据缓存（localStorage）
+            function saveData() {
+                try {
+                    localStorage.setItem('wecom-dashboard-data', JSON.stringify(rawData));
+                    localStorage.setItem('wecom-dashboard-time', Date.now());
+                } catch(e) {
+                    console.log('缓存失败:', e);
+                }
+            }
+            
+            function loadData() {
+                try {
+                    const cached = localStorage.getItem('wecom-dashboard-data');
+                    const cacheTime = localStorage.getItem('wecom-dashboard-time');
+                    
+                    if (cached && cacheTime) {
+                        const age = Date.now() - parseInt(cacheTime);
+                        // 缓存有效期 1 小时
+                        if (age < 3600000) {
+                            rawData = JSON.parse(cached);
+                            updateMetrics();
+                            renderAllRankings();
+                            showToast('已加载缓存数据');
+                            return true;
+                        }
+                    }
+                } catch(e) {
+                    console.log('加载缓存失败:', e);
+                }
+                return false;
+            }
+            
+            // 自动保存数据
+            setInterval(saveData, 30000); // 每 30 秒保存一次
+            
+            // 页面加载时尝试恢复缓存
+            window.addEventListener('load', function() {
+                if (isMobile) {
+                    loadData();
+                }
+            });
+            
+            // 下拉刷新（移动端）
+            let touchStartY = 0;
+            let touchEndY = 0;
+            
+            document.addEventListener('touchstart', function(e) {
+                touchStartY = e.touches[0].clientY;
+            }, { passive: true });
+            
+            document.addEventListener('touchmove', function(e) {
+                touchEndY = e.touches[0].clientY;
+            }, { passive: true });
+            
+            document.addEventListener('touchend', function(e) {
+                if (window.pageYOffset === 0 && touchEndY - touchStartY > 100) {
+                    showToast('下拉刷新功能');
+                    // 可以在这里触发数据刷新
+                }
+            });
+            
+            // Toast 提示
+            function showToast(message, duration = 2000) {
+                const toast = document.createElement('div');
+                toast.textContent = message;
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(0,0,0,0.8);
+                    color: white;
+                    padding: 12px 24px;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    z-index: 10000;
+                    animation: fadeInOut ${duration}ms ease;
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), duration);
+            }
+            
+            // 添加动画
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fadeInOut {
+                    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+                    20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                    80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // 防止双击缩放
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function(e) {
+                const now = Date.now();
+                if (now - lastTouchEnd <= 300) {
+                    e.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, { passive: false });
+            
+            // 优化输入框体验
+            document.querySelectorAll('input[type="text"]').forEach(input => {
+                input.addEventListener('focus', function() {
+                    setTimeout(() => {
+                        this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 300);
+                });
+            });
+            
+            // 页面可见性变化时保存/恢复
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden) {
+                    saveData();
+                }
+            });
+            
+            // 离线检测
+            window.addEventListener('offline', function() {
+                showToast('网络已断开，使用缓存数据');
+            });
+            
+            window.addEventListener('online', function() {
+                showToast('网络已恢复');
+            });
+        })();
+    </script>
+</body>
+</html>
