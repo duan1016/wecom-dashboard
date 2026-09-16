@@ -649,7 +649,7 @@ function renderModelList(){
 }
 
 /* 表头点击排序：两张表通用 */
-const sortState = { 'model-table': {col:null, dir:1}, 'tbl-dt': {col:null, dir:1} };
+const sortState = { 'model-table': {col:null, dir:1}, 'tbl-dt': {col:null, dir:1}, 'city-table': {col:null, dir:1} };
 function bindTableSort(tableId, applyFn){
   const ths = Array.prototype.slice.call(document.querySelectorAll('#' + tableId + ' thead th'));
   ths.forEach(function(th, idx){
@@ -856,6 +856,31 @@ function renderCityTable(){
     m.order += keys.reduce((s,k) => s + ((c.m[k]||{}).o || 0), 0);
   });
   const cities = Object.keys(cityMap).sort((a,b) => a.localeCompare(b,'zh'));
+  
+  /* 排序：表头点击状态 > 默认（城市名拼音） */
+  const st = sortState['city-table'];
+  if(st.col != null){
+    const cols = [
+      r=>r.city,           // 0 城市
+      r=>cityMap[r.city].auth,         // 1 授权客户数
+      r=>cityMap[r.city].moving,       // 2 动销客户数
+      r=>pct(cityMap[r.city].moving, cityMap[r.city].auth),  // 3 动销率
+      r=>cityMap[r.city].sampleC,      // 4 样机下单客户数
+      r=>pct(cityMap[r.city].sampleC, cityMap[r.city].auth), // 5 样机下单占比
+      r=>cityMap[r.city].orderC,        // 6 订单客户数
+      r=>pct(cityMap[r.city].orderC, cityMap[r.city].auth),  // 7 订单客户占比
+      r=>cityMap[r.city].install,      // 8 安装总量
+      r=>cityMap[r.city].sample,       // 9 样机下单总量
+      r=>cityMap[r.city].order         // 10 订单总量
+    ];
+    const get = cols[st.col];
+    cities.sort((a,b) => {
+      const va = get({city:a}), vb = get({city:b});
+      const cmp = (typeof va === 'string') ? va.localeCompare(vb,'zh') : (va - vb);
+      return cmp * st.dir;
+    });
+  }
+  
   let body = '';
   let sumAuth=0, sumMoving=0, sumSampleC=0, sumOrderC=0, sumInstall=0, sumSample=0, sumOrder=0;
   cities.forEach(city => {
