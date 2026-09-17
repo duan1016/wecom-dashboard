@@ -108,7 +108,7 @@ thead th.sortable:hover{background:#2A4E80;}
 
   <!-- ③ 监控机型清单 -->
   <div class="sec">
-    <div class="sec-h"><div class="ico">型</div><h2>监控机型清单</h2><span class="tag" id="model-count"></span></div>
+    <div class="sec-h"><div class="ico">型</div><h2>监控机型清单</h2><span class="tag" id="model-count"></span><button class="btn-export" style="margin-left:auto;padding:8px 16px;font-size:12px;" onclick="exportModelListImage()">导出图片</button><button class="btn-export" style="margin-left:8px;padding:8px 16px;font-size:12px;" onclick="exportModelListXLS()">导出表格</button></div>
     <div class="tbl-wrap" style="max-height:420px;">
       <table id="model-table">
         <thead><tr><th>产品型号</th><th>白名单限额</th><th>授权客户数量</th><th>限额达标率</th><th>安装总量</th><th>动销客户数量</th><th>动销率</th><th>样机下单客户数量</th><th>样机下单占比</th><th>订单客户数量</th><th>订单客户占比</th></tr></thead>
@@ -122,7 +122,7 @@ thead th.sortable:hover{background:#2A4E80;}
     <div class="sec-h"><div class="ico">表</div><h2 id="tbl-title">授权客户监控明细</h2><span class="tag" id="tbl-count">-</span></div>
     <div class="search-box">
       <input id="f-search" oninput="refreshAll()" type="text" placeholder="搜索产品型号 / 城市 / 区县 / 客户编码 / 客户名称">
-      <button class="btn-export" style="padding:8px 16px;font-size:12px;" onclick="exportDetailImage()">导出图片</button>
+      <button class="btn-export" style="padding:8px 16px;font-size:12px;" onclick="exportDetailImage()">导出图片</button><button class="btn-export" style="margin-left:8px;padding:8px 16px;font-size:12px;" onclick="exportDetailXLS()">导出表格</button>
     </div>
     <div class="filter-bar" style="margin:0 0 14px;box-shadow:none;">
       <div class="filter-group"><span class="filter-label">城市：</span><select id="f-city" onchange="onCityChange()" style="min-width:0;width:130px;"></select></div>
@@ -140,7 +140,7 @@ thead th.sortable:hover{background:#2A4E80;}
 
   <!-- ⑤ 城市维度汇总表 -->
   <div class="sec">
-    <div class="sec-h"><div class="ico">城</div><h2>城市维度汇总</h2><span class="tag" id="city-count">-</span><button class="btn-export" style="margin-left:auto;padding:8px 16px;font-size:12px;" onclick="exportCityImage()">导出图片</button></div>
+    <div class="sec-h"><div class="ico">城</div><h2>城市维度汇总</h2><span class="tag" id="city-count">-</span><button class="btn-export" style="margin-left:auto;padding:8px 16px;font-size:12px;" onclick="exportCityImage()">导出图片</button><button class="btn-export" style="margin-left:8px;padding:8px 16px;font-size:12px;" onclick="exportCityXLS()">导出表格</button></div>
     <div class="tbl-wrap" style="max-height:500px;">
       <table id="city-table">
         <thead><tr><th>城市</th><th>授权客户数</th><th>动销客户数</th><th>动销率</th><th>样机下单客户数</th><th>样机下单占比</th><th>订单客户数</th><th>订单客户占比</th><th>安装总量</th><th>样机下单总量</th><th>订单总量</th></tr></thead>
@@ -1084,6 +1084,172 @@ function exportCityImage(){
   a.href = canvas.toDataURL('image/png');
   a.download = '城市维度汇总_'+ts.replace(/[: ]/g,'_')+'.png';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+/* ========== 通用Excel导出（生成xlsx兼容的HTML表格，.xls文件） ========== */
+function exportXLS(filename, headers, rows){
+  const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Sheet1</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table border="1"><thead><tr>'
+    + headers.map(h => '<th style="background:#1178FE;color:#fff;font-weight:bold;padding:4px 8px;">' + h + '</th>').join('')
+    + '</tr></thead><tbody>'
+    + rows.map(r => '<tr>' + r.map(c => '<td style="padding:4px 8px;mso-number-format:\\@;">' + c + '</td>').join('') + '</tr>').join('')
+    + '</tbody></table></body></html>';
+  const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename + '.xls';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ========== 监控机型清单表 — 导出图片 ========== */
+function exportModelListImage(){
+  const rows = MODEL_KEYS.map(modelRow);
+  const W = 920, rowH = 34, headerH = 140, footerH = 50;
+  let H = headerH + (rows.length + 1) * rowH + 40 + footerH;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const FH = '"Microsoft YaHei","PingFang SC",sans-serif';
+  ctx.fillStyle = '#F4F8FD'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = '#1178FE'; ctx.fillRect(0,0,W,108);
+  ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 26px ' + FH;
+  ctx.fillText('监控机型清单', 30, 46);
+  ctx.font = '14px ' + FH;
+  const now = new Date();
+  const pad = n => (n<10?'0'+n:''+n);
+  const ts = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+' '+pad(now.getHours())+':'+pad(now.getMinutes());
+  ctx.fillText(CENTER_NAME+'运中 · 数据截止：'+DATA_DATE+' · 导出时间：'+ts+' · 共'+rows.length+'个机型', 30, 82);
+
+  const cols = ['产品型号','限额','授权','达标率','安装','动销','动销率','样机下单','样机占比','订单','订单占比'];
+  const colX = [30,200,260,320,380,440,500,560,640,710,800];
+  let y = headerH;
+  ctx.fillStyle = '#1F3A63'; ctx.font = 'bold 13px ' + FH;
+  cols.forEach((t,i) => ctx.fillText(t, colX[i], y));
+  y += 24;
+  rows.forEach((r, idx) => {
+    ctx.fillStyle = idx % 2 === 0 ? '#FAFCFF' : '#FFFFFF';
+    ctx.fillRect(20, y-4, W-40, rowH-2);
+    ctx.font = '13px ' + FH; ctx.fillStyle = '#1F2A3D';
+    ctx.fillText(clipText(ctx, r.name, 160), colX[0], y+16);
+    ctx.fillText(r.quota === Infinity ? '—' : r.quota, colX[1], y+16);
+    ctx.fillText(r.auth, colX[2], y+16);
+    ctx.fillText(r.limitPct == null ? '—' : r.limitPct+'%', colX[3], y+16);
+    ctx.fillText(r.installTotal, colX[4], y+16);
+    ctx.fillText(r.movingC, colX[5], y+16);
+    ctx.fillStyle = r.movingPct>=80?'#16A34A':r.movingPct>=50?'#F5A623':'#E53935';
+    ctx.fillText(r.movingPct+'%', colX[6], y+16);
+    ctx.fillStyle = '#1F2A3D'; ctx.fillText(r.sampleC, colX[7], y+16);
+    ctx.fillStyle = r.samplePct>=80?'#16A34A':r.samplePct>=50?'#F5A623':'#E53935';
+    ctx.fillText(r.samplePct+'%', colX[8], y+16);
+    ctx.fillStyle = '#1F2A3D'; ctx.fillText(r.orderC, colX[9], y+16);
+    ctx.fillStyle = r.orderPct>=80?'#16A34A':r.orderPct>=50?'#F5A623':'#E53935';
+    ctx.fillText(r.orderPct+'%', colX[10], y+16);
+    y += rowH;
+  });
+  ctx.fillStyle = '#6B7A90'; ctx.font = '12px ' + FH;
+  ctx.fillText('数据来源：授权明细.xlsx + 订单数据.xlsx + 1.1-9.13安装.xlsx + 商户基础信息.xlsx', 24, H-24);
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = '监控机型清单_'+ts.replace(/[: ]/g,'_')+'.png';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+/* ========== 监控机型清单表 — 导出Excel ========== */
+function exportModelListXLS(){
+  const rows = MODEL_KEYS.map(modelRow);
+  const headers = ['产品型号','白名单限额','授权客户数量','限额达标率','安装总量','动销客户数量','动销率','样机下单客户数量','样机下单占比','订单客户数量','订单客户占比'];
+  const data = rows.map(r => [
+    r.name, r.quota === Infinity ? '—' : r.quota, r.auth,
+    r.limitPct == null ? '—' : r.limitPct+'%',
+    r.installTotal, r.movingC, r.movingPct+'%',
+    r.sampleC, r.samplePct+'%', r.orderC, r.orderPct+'%'
+  ]);
+  const now = new Date();
+  const pad = n => (n<10?'0'+n:''+n);
+  const ts = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+'_'+pad(now.getHours())+pad(now.getMinutes());
+  exportXLS('监控机型清单_'+CENTER_NAME+'运中_'+ts, headers, data);
+}
+
+/* ========== 授权客户明细表 — 导出Excel ========== */
+function exportDetailXLS(){
+  const keys = getScope();
+  const q = document.getElementById('f-search').value.trim().toLowerCase();
+  const qm = q ? MODEL_KEYS.filter(k =>
+    MODELS[k].name.toLowerCase().includes(q) || (MODELS[k].sample||'').toLowerCase().includes(q)) : [];
+  const cityF = document.getElementById('f-city').value;
+  const distF = document.getElementById('f-dist').value;
+  const codeF = document.getElementById('f-code').value;
+  const nameF = document.getElementById('f-name').value;
+
+  const filtered = CUSTOMERS.filter(c => {
+    const hasAuth = MODEL_KEYS.some(k => (c.m[k]||{}).a === 1);
+    if (!hasAuth) return false;
+    if (!c.city || c.city === '南京市') return false;
+    if (cityF && c.city !== cityF) return false;
+    if (distF && c.dist !== distF) return false;
+    if (codeF && c.code !== codeF) return false;
+    if (nameF && c.name !== nameF) return false;
+    const inScope = keys.some(k => hasActivity(c, k));
+    if (!q) return inScope;
+    const text = (c.city + c.dist + c.code + c.name).toLowerCase();
+    if (text.includes(q)) return inScope;
+    return qm.length > 0 && qm.some(k => hasActivity(c, k)) && inScope;
+  });
+  if(filtered.length === 0){ alert('当前筛选条件下无客户数据'); return; }
+  const scopeName = keys.length === MODEL_KEYS.length ? '全部机型' : keys.map(k => MODELS[k].name).join('、');
+  const headers = ['城市','区县','客户编码','客户名称','安装数量','样机下单数量','订单数量'];
+  const data = filtered.map(c => [
+    c.city||'', c.dist||'', c.code, c.name||'',
+    keys.reduce((s,k) => s + ((c.m[k]||{}).i || 0), 0),
+    keys.reduce((s,k) => s + ((c.m[k]||{}).s || 0), 0),
+    keys.reduce((s,k) => s + ((c.m[k]||{}).o || 0), 0)
+  ]);
+  data.push(['合计（'+filtered.length+'个客户）','','','','',
+    filtered.reduce((s,c) => s + keys.reduce((a,k) => a + ((c.m[k]||{}).i || 0), 0), 0),
+    filtered.reduce((s,c) => s + keys.reduce((a,k) => a + ((c.m[k]||{}).s || 0), 0), 0),
+    filtered.reduce((s,c) => s + keys.reduce((a,k) => a + ((c.m[k]||{}).o || 0), 0), 0)
+  ]);
+  const now = new Date();
+  const pad = n => (n<10?'0'+n:''+n);
+  const ts = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+'_'+pad(now.getHours())+pad(now.getMinutes());
+  exportXLS('授权客户明细_'+scopeName+'_'+ts, headers, data);
+}
+
+/* ========== 城市维度汇总表 — 导出Excel ========== */
+function exportCityXLS(){
+  const keys = getScope();
+  const cityMap = {};
+  CUSTOMERS.forEach(c => {
+    const city = c.city; if(!city || city === '南京市') return;
+    if(!cityMap[city]) cityMap[city] = {auth:0, moving:0, sampleC:0, orderC:0, install:0, sample:0, order:0};
+    const m = cityMap[city];
+    const hasAuth = keys.some(k => (c.m[k]||{}).a === 1);
+    const hasInstall = keys.some(k => (c.m[k]||{}).i > 0);
+    const hasSample = keys.some(k => (c.m[k]||{}).s > 0);
+    const hasOrder = keys.some(k => (c.m[k]||{}).o > 0);
+    if(hasAuth) m.auth++;
+    if(hasAuth && hasInstall) m.moving++;
+    if(hasAuth && hasSample) m.sampleC++;
+    if(hasAuth && hasOrder) m.orderC++;
+    m.install += keys.reduce((s,k) => s + ((c.m[k]||{}).i || 0), 0);
+    m.sample += keys.reduce((s,k) => s + ((c.m[k]||{}).s || 0), 0);
+    m.order += keys.reduce((s,k) => s + ((c.m[k]||{}).o || 0), 0);
+  });
+  const cities = Object.keys(cityMap).sort((a,b) => a.localeCompare(b,'zh'));
+  if(cities.length === 0){ alert('暂无城市数据'); return; }
+  const headers = ['城市','授权客户数','动销客户数','动销率','样机下单客户数','样机下单占比','订单客户数','订单客户占比','安装总量','样机下单总量','订单总量'];
+  let sumAuth=0,sumMoving=0,sumSampleC=0,sumOrderC=0,sumInstall=0,sumSample=0,sumOrder=0;
+  const data = cities.map(city => {
+    const d = cityMap[city];
+    sumAuth+=d.auth; sumMoving+=d.moving; sumSampleC+=d.sampleC; sumOrderC+=d.orderC;
+    sumInstall+=d.install; sumSample+=d.sample; sumOrder+=d.order;
+    return [city, d.auth, d.moving, pct(d.moving,d.auth)+'%', d.sampleC, pct(d.sampleC,d.auth)+'%', d.orderC, pct(d.orderC,d.auth)+'%', d.install, d.sample, d.order];
+  });
+  data.push(['合计（'+cities.length+'个城市）', sumAuth, sumMoving, pct(sumMoving,sumAuth)+'%', sumSampleC, pct(sumSampleC,sumAuth)+'%', sumOrderC, pct(sumOrderC,sumAuth)+'%', sumInstall, sumSample, sumOrder]);
+  const now = new Date();
+  const pad = n => (n<10?'0'+n:''+n);
+  const ts = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+'_'+pad(now.getHours())+pad(now.getMinutes());
+  exportXLS('城市维度汇总_'+ts, headers, data);
 }
 
 function refreshAll(){
