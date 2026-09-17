@@ -926,7 +926,11 @@ function exportDetailImage(){
   const codeF = document.getElementById('f-code').value;
   const nameF = document.getElementById('f-name').value;
 
+  /* 与renderTable完全一致的筛选逻辑 */
   const filtered = CUSTOMERS.filter(c => {
+    const hasAuth = MODEL_KEYS.some(k => (c.m[k]||{}).a === 1);
+    if (!hasAuth) return false;
+    if (!c.city || c.city === '南京市') return false;
     if (cityF && c.city !== cityF) return false;
     if (distF && c.dist !== distF) return false;
     if (codeF && c.code !== codeF) return false;
@@ -941,12 +945,26 @@ function exportDetailImage(){
   if(filtered.length === 0){ alert('当前筛选条件下无客户数据'); return; }
 
   const scopeName = keys.length === MODEL_KEYS.length ? '全部机型' : keys.map(k => MODELS[k].name).join('、');
-  const rows = filtered.map(c => ({
+  let rows = filtered.map(c => ({
     c,
     i: keys.reduce((s,k) => s + ((c.m[k]||{}).i || 0), 0),
     s: keys.reduce((x,k) => x + ((c.m[k]||{}).s || 0), 0),
     o: keys.reduce((x,k) => x + ((c.m[k]||{}).o || 0), 0)
-  })).sort((a,b) => a.c.city === b.c.city ? (a.c.dist === b.c.dist ? a.c.code.localeCompare(b.c.code) : a.c.dist.localeCompare(b.c.dist)) : a.c.city.localeCompare(b.c.city,'zh'));
+  }));
+
+  /* 同步页面排序状态 */
+  const st = sortState['tbl-dt'];
+  if(st.col != null){
+    const cols = [r=>r.c.city, r=>r.c.dist, r=>r.c.code, r=>r.c.name, r=>r.i, r=>r.s, r=>r.o];
+    const get = cols[st.col];
+    rows.sort((a,b) => {
+      const va = get(a), vb = get(b);
+      const cmp = (typeof va === 'string') ? va.localeCompare(vb,'zh') : (va - vb);
+      return cmp * st.dir;
+    });
+  } else {
+    rows.sort((a,b) => a.c.city === b.c.city ? (a.c.dist === b.c.dist ? a.c.code.localeCompare(b.c.code) : a.c.dist.localeCompare(b.c.dist)) : a.c.city.localeCompare(b.c.city,'zh'));
+  }
 
   const W = 920, rowH = 34, headerH = 140, footerH = 50;
   let H = headerH + rows.length * rowH + 40 + footerH;
@@ -981,9 +999,18 @@ function exportDetailImage(){
     ctx.fillText(clipText(ctx, r.c.dist||'', 80), 120, y + 16);
     ctx.fillStyle = '#1178FE'; ctx.fillText(r.c.code, 220, y + 16);
     ctx.fillStyle = '#1F2A3D'; ctx.fillText(clipText(ctx, r.c.name||'', 180), 440, y + 16);
-    ctx.fillStyle = r.i > 0 ? '#16A34A' : '#bbb'; ctx.font = 'bold 13px ' + FH; ctx.fillText(r.i, 640, y + 16);
-    ctx.fillStyle = r.s > 0 ? '#1178FE' : '#bbb'; ctx.fillText(r.s, 720, y + 16);
-    ctx.fillStyle = r.o > 0 ? '#1F2A3D' : '#bbb'; ctx.fillText(r.o, 800, y + 16);
+    /* 安装: >0绿色加粗, =0红色加粗 */
+    if(r.i > 0){ ctx.fillStyle = '#16A34A'; ctx.font = 'bold 13px ' + FH; }
+    else { ctx.fillStyle = '#E53935'; ctx.font = 'bold 13px ' + FH; }
+    ctx.fillText(r.i, 640, y + 16);
+    /* 样机下单: >0蓝色加粗, =0红色加粗 */
+    if(r.s > 0){ ctx.fillStyle = '#1178FE'; ctx.font = 'bold 13px ' + FH; }
+    else { ctx.fillStyle = '#E53935'; ctx.font = 'bold 13px ' + FH; }
+    ctx.fillText(r.s, 720, y + 16);
+    /* 订单: >0正常, =0红色加粗 */
+    if(r.o > 0){ ctx.fillStyle = '#1F2A3D'; ctx.font = '13px ' + FH; }
+    else { ctx.fillStyle = '#E53935'; ctx.font = 'bold 13px ' + FH; }
+    ctx.fillText(r.o, 800, y + 16);
     y += rowH;
   });
   ctx.fillStyle = '#6B7A90'; ctx.font = '12px ' + FH;
@@ -1014,8 +1041,26 @@ function exportCityImage(){
     m.sample += keys.reduce((s,k) => s + ((c.m[k]||{}).s || 0), 0);
     m.order += keys.reduce((s,k) => s + ((c.m[k]||{}).o || 0), 0);
   });
-  const cities = Object.keys(cityMap).sort((a,b) => a.localeCompare(b,'zh'));
+  let cities = Object.keys(cityMap).sort((a,b) => a.localeCompare(b,'zh'));
   if(cities.length === 0){ alert('暂无城市数据'); return; }
+
+  /* 同步页面排序状态 */
+  const st = sortState['city-table'];
+  if(st.col != null){
+    const cols = [
+      r=>r, r=>cityMap[r].auth, r=>cityMap[r].moving,
+      r=>pct(cityMap[r].moving, cityMap[r].auth), r=>cityMap[r].sampleC,
+      r=>pct(cityMap[r].sampleC, cityMap[r].auth), r=>cityMap[r].orderC,
+      r=>pct(cityMap[r].orderC, cityMap[r].auth), r=>cityMap[r].install,
+      r=>cityMap[r].sample, r=>cityMap[r].order
+    ];
+    const get = cols[st.col];
+    cities.sort((a,b) => {
+      const va = get(a), vb = get(b);
+      const cmp = (typeof va === 'string') ? va.localeCompare(vb,'zh') : (va - vb);
+      return cmp * st.dir;
+    });
+  }
 
   const scopeName = keys.length === MODEL_KEYS.length ? '全部机型' : keys.map(k => MODELS[k].name).join('、');
   const W = 1100, rowH = 34, headerH = 140, footerH = 50;
@@ -1051,19 +1096,45 @@ function exportCityImage(){
     ctx.font = '13px ' + FH; ctx.fillStyle = '#1F2A3D';
     ctx.fillText(city, colX[0], y + 16);
     ctx.fillText(d.auth, colX[1], y + 16);
+    /* 动销客户数: 0值红色加粗 */
+    if(d.moving > 0){ ctx.fillStyle = '#1F2A3D'; ctx.font = '13px ' + FH; }
+    else { ctx.fillStyle = '#E53935'; ctx.font = 'bold 13px ' + FH; }
     ctx.fillText(d.moving, colX[2], y + 16);
-    ctx.fillStyle = d.moving/d.auth>=0.8?'#16A34A':d.moving/d.auth>=0.5?'#F5A623':'#E53935';
+    /* 动销率: rateClass配色 */
+    ctx.fillStyle = pct(d.moving,d.auth)>=80?'#16A34A':pct(d.moving,d.auth)>=50?'#F5A623':'#E53935';
+    ctx.font = 'bold 13px ' + FH;
     ctx.fillText(pct(d.moving,d.auth)+'%', colX[3], y + 16);
-    ctx.fillStyle = '#1F2A3D'; ctx.fillText(d.sampleC, colX[4], y + 16);
+    /* 样机下单客户数: 0值红色加粗 */
+    if(d.sampleC > 0){ ctx.fillStyle = '#1F2A3D'; ctx.font = '13px ' + FH; }
+    else { ctx.fillStyle = '#E53935'; ctx.font = 'bold 13px ' + FH; }
+    ctx.fillText(d.sampleC, colX[4], y + 16);
+    /* 样机占比: rateClass配色 */
+    ctx.fillStyle = pct(d.sampleC,d.auth)>=80?'#16A34A':pct(d.sampleC,d.auth)>=50?'#F5A623':'#E53935';
+    ctx.font = 'bold 13px ' + FH;
     ctx.fillText(pct(d.sampleC,d.auth)+'%', colX[5], y + 16);
+    /* 订单客户数: 0值红色加粗 */
+    if(d.orderC > 0){ ctx.fillStyle = '#1F2A3D'; ctx.font = '13px ' + FH; }
+    else { ctx.fillStyle = '#E53935'; ctx.font = 'bold 13px ' + FH; }
     ctx.fillText(d.orderC, colX[6], y + 16);
+    /* 订单占比: rateClass配色 */
+    ctx.fillStyle = pct(d.orderC,d.auth)>=80?'#16A34A':pct(d.orderC,d.auth)>=50?'#F5A623':'#E53935';
+    ctx.font = 'bold 13px ' + FH;
     ctx.fillText(pct(d.orderC,d.auth)+'%', colX[7], y + 16);
-    ctx.fillStyle = d.install > 0 ? '#16A34A' : '#bbb'; ctx.fillText(d.install, colX[8], y + 16);
-    ctx.fillStyle = d.sample > 0 ? '#1178FE' : '#bbb'; ctx.fillText(d.sample, colX[9], y + 16);
-    ctx.fillStyle = d.order > 0 ? '#1F2A3D' : '#bbb'; ctx.fillText(d.order, colX[10], y + 16);
+    /* 安装总量: >0绿色加粗, =0红色加粗 */
+    if(d.install > 0){ ctx.fillStyle = '#16A34A'; ctx.font = 'bold 13px ' + FH; }
+    else { ctx.fillStyle = '#E53935'; ctx.font = 'bold 13px ' + FH; }
+    ctx.fillText(d.install, colX[8], y + 16);
+    /* 样机下单总量: >0蓝色加粗, =0红色加粗 */
+    if(d.sample > 0){ ctx.fillStyle = '#1178FE'; ctx.font = 'bold 13px ' + FH; }
+    else { ctx.fillStyle = '#E53935'; ctx.font = 'bold 13px ' + FH; }
+    ctx.fillText(d.sample, colX[9], y + 16);
+    /* 订单总量: >0正常, =0红色加粗 */
+    if(d.order > 0){ ctx.fillStyle = '#1F2A3D'; ctx.font = '13px ' + FH; }
+    else { ctx.fillStyle = '#E53935'; ctx.font = 'bold 13px ' + FH; }
+    ctx.fillText(d.order, colX[10], y + 16);
     y += rowH;
   });
-  // 合计行
+  /* 合计行 */
   ctx.fillStyle = '#E8F2FF'; ctx.fillRect(20, y - 4, W - 40, rowH);
   ctx.font = 'bold 13px ' + FH; ctx.fillStyle = '#0A5FD6';
   ctx.fillText('合计', colX[0], y + 16);
@@ -1103,7 +1174,18 @@ function exportXLS(filename, headers, rows){
 
 /* ========== 监控机型清单表 — 导出图片 ========== */
 function exportModelListImage(){
-  const rows = MODEL_KEYS.map(modelRow);
+  let rows = MODEL_KEYS.map(modelRow);
+  /* 同步页面排序状态 */
+  const st = sortState['model-table'];
+  if(st.col != null){
+    const cols = [r=>r.name, r=>r.quota, r=>r.auth, r=>r.limitPct, r=>r.installTotal, r=>r.movingC, r=>r.movingPct, r=>r.sampleC, r=>r.samplePct, r=>r.orderC, r=>r.orderPct];
+    const get = cols[st.col];
+    rows.sort((a,b) => {
+      const va = get(a), vb = get(b);
+      const cmp = (typeof va === 'string') ? va.localeCompare(vb,'zh') : (va - vb);
+      return cmp * st.dir;
+    });
+  }
   const W = 920, rowH = 34, headerH = 140, footerH = 50;
   let H = headerH + (rows.length + 1) * rowH + 40 + footerH;
   const canvas = document.createElement('canvas');
@@ -1134,15 +1216,33 @@ function exportModelListImage(){
     ctx.fillText(r.quota === Infinity ? '—' : r.quota, colX[1], y+16);
     ctx.fillText(r.auth, colX[2], y+16);
     ctx.fillText(r.limitPct == null ? '—' : r.limitPct+'%', colX[3], y+16);
+    /* 安装总量: 0值红色加粗 */
+    if(r.installTotal > 0){ ctx.fillStyle = '#1F2A3D'; ctx.font = '13px ' + FH; }
+    else { ctx.fillStyle = '#E53935'; ctx.font = 'bold 13px ' + FH; }
     ctx.fillText(r.installTotal, colX[4], y+16);
+    /* 动销客户数: 0值红色加粗 */
+    if(r.movingC > 0){ ctx.fillStyle = '#1F2A3D'; ctx.font = '13px ' + FH; }
+    else { ctx.fillStyle = '#E53935'; ctx.font = 'bold 13px ' + FH; }
     ctx.fillText(r.movingC, colX[5], y+16);
+    /* 动销率: rateClass配色 */
     ctx.fillStyle = r.movingPct>=80?'#16A34A':r.movingPct>=50?'#F5A623':'#E53935';
+    ctx.font = 'bold 13px ' + FH;
     ctx.fillText(r.movingPct+'%', colX[6], y+16);
-    ctx.fillStyle = '#1F2A3D'; ctx.fillText(r.sampleC, colX[7], y+16);
+    /* 样机下单客户数: 0值红色加粗 */
+    if(r.sampleC > 0){ ctx.fillStyle = '#1F2A3D'; ctx.font = '13px ' + FH; }
+    else { ctx.fillStyle = '#E53935'; ctx.font = 'bold 13px ' + FH; }
+    ctx.fillText(r.sampleC, colX[7], y+16);
+    /* 样机占比: rateClass配色 */
     ctx.fillStyle = r.samplePct>=80?'#16A34A':r.samplePct>=50?'#F5A623':'#E53935';
+    ctx.font = 'bold 13px ' + FH;
     ctx.fillText(r.samplePct+'%', colX[8], y+16);
-    ctx.fillStyle = '#1F2A3D'; ctx.fillText(r.orderC, colX[9], y+16);
+    /* 订单客户数: 0值红色加粗 */
+    if(r.orderC > 0){ ctx.fillStyle = '#1F2A3D'; ctx.font = '13px ' + FH; }
+    else { ctx.fillStyle = '#E53935'; ctx.font = 'bold 13px ' + FH; }
+    ctx.fillText(r.orderC, colX[9], y+16);
+    /* 订单占比: rateClass配色 */
     ctx.fillStyle = r.orderPct>=80?'#16A34A':r.orderPct>=50?'#F5A623':'#E53935';
+    ctx.font = 'bold 13px ' + FH;
     ctx.fillText(r.orderPct+'%', colX[10], y+16);
     y += rowH;
   });
