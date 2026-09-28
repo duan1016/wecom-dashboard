@@ -474,8 +474,10 @@ function saleCell(v){
   return '<span class="sale" title="'+esc(fmtAmt(v))+'">'+fmtAmt(v)+'</span>';
 }
 function saleText(v){
-  if(v===null||v===undefined) return "";
-  return String(v);
+  if(v===null||v===undefined) return "—";
+  var n = Number(v);
+  if(isNaN(n) || n===0) return "—";
+  return (n/10000).toFixed(2);
 }
 function upgCell(r){
   const u = r.upg;
