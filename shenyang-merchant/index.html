@@ -464,7 +464,8 @@ function fmtAmt(v){
   if(v===null||v===undefined) return "—";
   const n = Number(v);
   if(isNaN(n)) return "—";
-  return (Math.abs(n)>=1000 ? n.toFixed(0) : n.toFixed(1)) + "万";
+  const w = n / 10000;
+  return (Math.abs(w)>=1000 ? w.toFixed(0) : w.toFixed(2)) + "万";
 }
 /* ---------- 销售金额（整体 / 家用） ---------- */
 function saleCell(v){
