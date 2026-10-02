@@ -79,6 +79,13 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 .cq-tbl td:nth-child(1),.cq-tbl td:nth-child(2),.cq-tbl td:nth-child(3),.cq-tbl td:nth-child(4),.cq-tbl td:nth-child(5){text-align:left;}
 .cq-tbl tbody tr:nth-child(even){background:#f9fafb;}
 .cq-tbl tbody tr:hover{background:#f0f4ff;}
+.dt-tbl{border-collapse:collapse;}
+.dt-tbl th,.dt-tbl td{border:1px solid #b0b8c4;padding:8px 12px;}
+.dt-tbl th{background:#1e3a5f;color:#fff;text-align:center;position:sticky;top:0;z-index:1;}
+.dt-tbl td{text-align:center;}
+.dt-tbl td:nth-child(1),.dt-tbl td:nth-child(2),.dt-tbl td:nth-child(3),.dt-tbl td:nth-child(4){text-align:left;}
+.dt-tbl tbody tr:nth-child(even){background:#f9fafb;}
+.dt-tbl tbody tr:hover{background:#f0f4ff;}
 table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px;}
 thead th{position:sticky;top:0;background:#1F3A63;color:#fff;padding:11px 12px;text-align:left;font-weight:600;white-space:nowrap;z-index:5;}
 tbody td{padding:9px 12px;border-bottom:1px solid #EDF2F9;white-space:nowrap;}
@@ -337,7 +344,7 @@ tfoot td{background:#f9fafb;font-weight:600;border-top:2px solid var(--c-border)
       <div class="filter-group"><span class="filter-label">客户名称：</span><select id="f-name" onchange="refreshAll()" style="min-width:0;width:230px;"></select></div>
     </div>
     <div class="tbl-wrap">
-      <table id="tbl-dt">
+      <table id="tbl-dt" class="dt-tbl">
         <thead><tr><th>城市</th><th>区县</th><th>客户编码</th><th>客户名称</th><th>安装数量</th><th>样机下单数量</th><th>订单数量</th></tr></thead>
         <tbody id="tbl-body"></tbody>
       </table>
