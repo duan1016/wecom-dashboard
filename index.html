@@ -1595,32 +1595,211 @@ bindTableSort('city-table', renderCityTable);
 refreshAll();
 
 /* ====== 客户授权机型查询 ====== */
+function esc(s){if(s==null)return"";return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 let cqSelected = [];
 
 function onCustSearch(){
-  var q = document.getElementById('cq-search').value.trim().toLowerCase();
-  var box = document.getElementById('cq-suggest');
-  if(!q){ box.style.display='none'; box.innerHTML=''; return; }
+  var q = document.getElementById("cq-search").value.trim().toLowerCase();
+  var box = document.getElementById("cq-suggest");
+  if(!q){ box.style.display="none"; box.innerHTML=""; return; }
   var list = CUSTOMERS.filter(function(c){
     return c.code && c.name &&
       (c.code.toLowerCase().indexOf(q)>=0 || c.name.toLowerCase().indexOf(q)>=0) &&
       cqSelected.indexOf(c.code)<0;
   }).slice(0, 20);
-  if(!list.length){ box.style.display='none'; box.innerHTML=''; return; }
-  box.style.display='block';
-  box.innerHTML = list.map(function(c){
-    return '<div onclick="addCustQuery(\''+c.code+'\')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center;" onmouseover="this.style.background=\'#f5f7fa\'" onmouseout="this.style.background=\'#fff\'">'+
-      '<span><b>'+esc(c.code)+'</b> '+esc(c.name)+'</span>'+
-      '<span style="color:#888;font-size:12px;">'+esc(c.city||'—')+'</span></div>';
-  }).join('');
+  if(!list.length){ box.style.display="none"; box.innerHTML=""; return; }
+  box.style.display="block";
+  var html = "";
+  list.forEach(function(c){
+    var code = c.code;
+    var name = esc(c.name);
+    var city = esc(c.city||"--");
+    html += "<div data-code=\""+code+"\" style=\"padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center\">"+
+      "<span><b>"+esc(code)+"</b> "+name+"</span>"+
+      "<span style=\"color:#888;font-size:12px;\">"+city+"</span></div>";
+  });
+  box.innerHTML = html;
+  box.querySelectorAll("div[data-code]").forEach(function(el){
+    el.addEventListener("click", function(){ addCustQuery(this.getAttribute("data-code")); });
+    el.addEventListener("mouseover", function(){ this.style.background="#f5f7fa"; });
+    el.addEventListener("mouseout", function(){ this.style.background="#fff"; });
+  });
 }
 
 function addCustQuery(code){
   if(cqSelected.indexOf(code)<0) cqSelected.push(code);
-  document.getElementById('cq-search').value='';
-  document.getElementById('cq-suggest').style.display='none';
-  document.getElementById('cq-suggest').innerHTML='';
+  document.getElementById("cq-search").value="";
+  document.getElementById("cq-suggest").style.display="none";
+  document.getElementById("cq-suggest").innerHTML="";
   renderCustQuery();
+}
+
+function removeCustQuery(code){
+  cqSelected = cqSelected.filter(function(c){ return c !== code; });
+  renderCustQuery();
+}
+
+function clearCustQuery(){
+  cqSelected = [];
+  document.getElementById("cq-search").value="";
+  document.getElementById("cq-suggest").style.display="none";
+  document.getElementById("cq-suggest").innerHTML="";
+  renderCustQuery();
+}
+
+function renderCustQuery(){
+  var tagBox = document.getElementById("cq-selected");
+  var tagHtml = "";
+  cqSelected.forEach(function(code){
+    var c = null;
+    for(var i=0;i<CUSTOMERS.length;i++){ if(CUSTOMERS[i].code===code){c=CUSTOMERS[i];break;} }
+    if(!c) return;
+    tagHtml += "<span data-rm=\""+code+"\" style=\"display:inline-flex;align-items:center;gap:4px;padding:4px 12px;background:#eef2ff;border-radius:16px;font-size:13px;color:#1d4ed8;\">"+
+      "<b>"+esc(c.code)+"</b> "+esc(c.name)+
+      " <span style=\"cursor:pointer;margin-left:4px;color:#999;font-weight:bold;\">x</span></span>";
+  });
+  tagBox.innerHTML = tagHtml;
+  tagBox.querySelectorAll("span[data-rm]").forEach(function(el){
+    el.addEventListener("click", function(){ removeCustQuery(this.getAttribute("data-rm")); });
+  });
+
+  var tbody = document.getElementById("cq-tbody");
+  if(!cqSelected.length){
+    tbody.innerHTML = "<tr><td colspan=\"10\" style=\"text-align:center;color:#999;padding:24px;\">请在上方搜索框输入客户编码或名称，选择客户后查看其所有授权机型动销情况</td></tr>";
+    document.getElementById("cq-count").textContent = "-";
+    return;
+  }
+
+  var rows = [];
+  cqSelected.forEach(function(code){
+    var c = null;
+    for(var i=0;i<CUSTOMERS.length;i++){ if(CUSTOMERS[i].code===code){c=CUSTOMERS[i];break;} }
+    if(!c) return;
+    MODEL_KEYS.forEach(function(key){
+      var m = c.m[key];
+      if(!m || m.a !== 1) return;
+      rows.push({
+        code: c.code, name: c.name, city: c.city||"--", dist: c.dist||"--",
+        model: MODELS[key].name,
+        auth: m.a, moving: m.i>0?1:0,
+        sample: m.s||0, order: m.o||0, install: m.i||0
+      });
+    });
+  });
+
+  document.getElementById("cq-count").textContent = rows.length + " 条";
+
+  var tbodyHtml = "";
+  if(rows.length){
+    rows.forEach(function(r){
+      tbodyHtml += "<tr>"+
+      "<td>"+esc(r.code)+"</td>"+
+      "<td style=\"text-align:left\">"+esc(r.name)+"</td>"+
+      "<td>"+esc(r.city)+"</td>"+
+      "<td>"+esc(r.dist)+"</td>"+
+      "<td style=\"text-align:left\">"+esc(r.model)+"</td>"+
+      "<td>"+(r.auth?"<span style=\"color:#16a34a;font-weight:600;\">Y</span>":"<span style=\"color:#ccc;\">-</span>")+"</td>"+
+      "<td>"+(r.moving?"<span style=\"color:#16a34a;\">Y</span>":"<span style=\"color:#dc2626;\">N</span>")+"</td>"+
+      "<td>"+(r.sample>0?"<b style=\"color:#ea580c;\">"+r.sample+"</b>":"<span style=\"color:#ccc;\">0</span>")+"</td>"+
+      "<td>"+(r.order>0?"<b style=\"color:#2563eb;\">"+r.order+"</b>":"<span style=\"color:#ccc;\">0</span>")+"</td>"+
+      "<td>"+(r.install>0?"<b>"+r.install+"</b>":"<span style=\"color:#ccc;\">0</span>")+"</td>"+
+      "</tr>";
+    });
+  } else {
+    tbodyHtml = "<tr><td colspan=\"10\" style=\"text-align:center;color:#999;padding:16px;\">所选客户暂无授权机型</td></tr>";
+  }
+  tbody.innerHTML = tbodyHtml;
+}
+
+function exportCustQueryXLS(){
+  var rows = [];
+  cqSelected.forEach(function(code){
+    var c = null;
+    for(var i=0;i<CUSTOMERS.length;i++){ if(CUSTOMERS[i].code===code){c=CUSTOMERS[i];break;} }
+    if(!c) return;
+    MODEL_KEYS.forEach(function(key){
+      var m = c.m[key];
+      if(!m || m.a !== 1) return;
+      rows.push([c.code, c.name, c.city||"", c.dist||"", MODELS[key].name,
+        m.a?"Y":"N", m.i>0?"Y":"N", m.s||0, m.o||0, m.i||0]);
+    });
+  });
+  if(!rows.length){ alert("没有数据可导出"); return; }
+  var headers = ["客户编码","客户名称","城市","区县","机型","授权","动销","样机下单(台)","实机订单(台)","安装(台)"];
+  exportXLS("客户授权机型查询", headers, rows);
+}
+
+function exportCustQueryImage(){
+  var rows = [];
+  cqSelected.forEach(function(code){
+    var c = null;
+    for(var i=0;i<CUSTOMERS.length;i++){ if(CUSTOMERS[i].code===code){c=CUSTOMERS[i];break;} }
+    if(!c) return;
+    MODEL_KEYS.forEach(function(key){
+      var m = c.m[key];
+      if(!m || m.a !== 1) return;
+      rows.push({code:c.code, name:c.name, city:c.city||"", dist:c.dist||"",
+        model:MODELS[key].name, auth:"Y", moving:m.i>0?"Y":"N",
+        sample:m.s||0, order:m.o||0, install:m.i||0});
+    });
+  });
+  if(!rows.length){ alert("没有数据可导出"); return; }
+
+  var W=960, rowH=30, headerH=100, footerH=40;
+  var cols=[{t:"code",w:100},{t:"name",w:180},{t:"city",w:70},{t:"dist",w:70},
+    {t:"model",w:150},{t:"auth",w:40},{t:"move",w:40},{t:"sample",w:70},{t:"order",w:70},{t:"inst",w:50}];
+  var H = headerH + (rows.length+1)*rowH + footerH;
+  var cv=document.createElement("canvas"); cv.width=W; cv.height=H;
+  var ctx=cv.getContext("2d");
+  var FH="-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,Microsoft YaHei,sans-serif";
+
+  ctx.fillStyle="#fff"; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle="#1f2937"; ctx.font="600 16px "+FH;
+  ctx.fillText("客户授权机型查询", 16, 28);
+  ctx.fillStyle="#6b7280"; ctx.font="12px "+FH;
+  ctx.fillText(CENTER_NAME+"运中 | "+DATA_DATE+" | "+rows.length+" rows", 16, 50);
+
+  var y=headerH-rowH;
+  ctx.fillStyle="#f9fafb"; ctx.fillRect(0,y,W,rowH);
+  var x=0;
+  ctx.font="600 12px "+FH; ctx.textAlign="left"; ctx.textBaseline="middle";
+  cols.forEach(function(col){ ctx.fillStyle="#6b7280"; ctx.fillText(col.t,x+8,y+rowH/2); x+=col.w; });
+  y+=rowH;
+
+  rows.forEach(function(r,idx){
+    if(idx%2===1){ ctx.fillStyle="#f9fafb"; ctx.fillRect(0,y,W,rowH); }
+    var vals=[r.code,r.name,r.city,r.dist,r.model,r.auth,r.moving,String(r.sample),String(r.order),String(r.install)];
+    x=0;
+    ctx.font="12px "+FH; ctx.fillStyle="#1f2937";
+    vals.forEach(function(v,ci){
+      ctx.fillStyle="#1f2937"; ctx.font="12px "+FH;
+      if(ci===5){ctx.fillStyle="#16a34a";}
+      else if(ci===6){ctx.fillStyle=r.moving==="Y"?"#16a34a":"#dc2626";}
+      else if(ci===7&&r.sample>0){ctx.fillStyle="#ea580c";ctx.font="600 12px "+FH;}
+      else if(ci===8&&r.order>0){ctx.fillStyle="#2563eb";ctx.font="600 12px "+FH;}
+      var txt=String(v);
+      if(ctx.measureText(txt).width>cols[ci].w-12){txt=txt.slice(0,Math.floor(cols[ci].w/7))+"..";}
+      ctx.fillText(txt,x+8,y+rowH/2);
+      x+=cols[ci].w;
+    });
+    y+=rowH;
+  });
+
+  ctx.strokeStyle="#e5e7eb"; ctx.lineWidth=1;
+  for(var yy=headerH;yy<=y;yy+=rowH){ctx.beginPath();ctx.moveTo(0,yy+0.5);ctx.lineTo(W,yy+0.5);ctx.stroke();}
+  x=0; cols.forEach(function(col){x+=col.w;ctx.beginPath();ctx.moveTo(x+0.5,headerH-rowH);ctx.lineTo(x+0.5,y);ctx.stroke();});
+
+  cv.toBlob(function(blob){
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a");
+    a.href=url; a.download="customer_auth_query.png";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url);},500);
+  },"image/png");
+}
+
+renderCustQuery();
+
 }
 
 function removeCustQuery(code){
