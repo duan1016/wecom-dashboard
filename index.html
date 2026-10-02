@@ -1752,9 +1752,9 @@ function exportCustQueryImage(){
   });
   if(!rows.length){ alert("没有数据可导出"); return; }
 
-  var W=960, rowH=30, headerH=100, footerH=40;
-  var cols=[{t:"code",w:100},{t:"name",w:180},{t:"city",w:70},{t:"dist",w:70},
-    {t:"model",w:150},{t:"auth",w:40},{t:"move",w:40},{t:"sample",w:70},{t:"order",w:70},{t:"inst",w:50}];
+  var W=1060, rowH=30, headerH=100, footerH=40;
+  var cols=[{t:"客户编码",w:100},{t:"客户名称",w:200},{t:"城市",w:70},{t:"区县",w:80},
+    {t:"机型",w:160},{t:"授权",w:50},{t:"动销",w:50},{t:"样机下单(台)",w:100},{t:"实机订单(台)",w:110},{t:"安装(台)",w:80}];
   var H = headerH + (rows.length+1)*rowH + footerH;
   var cv=document.createElement("canvas"); cv.width=W; cv.height=H;
   var ctx=cv.getContext("2d");
@@ -1764,7 +1764,7 @@ function exportCustQueryImage(){
   ctx.fillStyle="#1f2937"; ctx.font="600 16px "+FH;
   ctx.fillText("客户授权机型查询", 16, 28);
   ctx.fillStyle="#6b7280"; ctx.font="12px "+FH;
-  ctx.fillText(CENTER_NAME+"运中 | "+DATA_DATE+" | "+rows.length+" rows", 16, 50);
+  ctx.fillText(CENTER_NAME+"运中 | "+DATA_DATE+" | "+rows.length+" 条", 16, 50);
 
   var y=headerH-rowH;
   ctx.fillStyle="#f9fafb"; ctx.fillRect(0,y,W,rowH);
