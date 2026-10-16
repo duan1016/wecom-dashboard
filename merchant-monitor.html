@@ -5,29 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>沈阳运中 · 授权客户 & 美云销商户分级看板</title>
 <style>
-.switch-bar{position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,#1e3a8a,#2563eb);display:flex;align-items:center;justify-content:center;gap:0;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.15)}
-.switch-btn{padding:10px 28px;border:none;background:none;color:rgba(255,255,255,.6);font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;border-bottom:3px solid transparent}
-.switch-btn.active{color:#fff;border-bottom-color:#fff;background:rgba(255,255,255,.08)}
-.switch-btn:hover:not(.active){background:rgba(255,255,255,.05);color:rgba(255,255,255,.85)}
-.page-container{display:none}
-.page-container.active{display:block}
-.jump-btn-bar{text-align:center;padding:8px 0;background:#eef2ff;border-radius:8px;margin:0 0 12px}
-.jump-btn{display:inline-block;padding:8px 24px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;text-decoration:none}
-.jump-btn:hover{background:linear-gradient(135deg,#1d4ed8,#1e3a8a);transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,.25)}
-body{margin:0;padding:0;padding-top:42px}
-iframe.page-iframe{width:100%;border:none;display:block}
+
+
+
+
+
+
+
+
+
+
+
 </style>
 <style>
-.switch-bar{position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,#1e3a8a,#2563eb);display:flex;align-items:center;justify-content:center;gap:0;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.15)}
-.switch-btn{padding:10px 28px;border:none;background:none;color:rgba(255,255,255,.6);font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;border-bottom:3px solid transparent}
-.switch-btn.active{color:#fff;border-bottom-color:#fff;background:rgba(255,255,255,.08)}
-.switch-btn:hover:not(.active){background:rgba(255,255,255,.05);color:rgba(255,255,255,.85)}
-.page-container{display:none}
-.page-container.active{display:block}
-.jump-btn-bar{text-align:center;padding:8px 0;background:#eef2ff;border-radius:8px;margin:0 0 12px}
-.jump-btn{display:inline-block;padding:8px 24px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;text-decoration:none}
-.jump-btn:hover{background:linear-gradient(135deg,#1d4ed8,#1e3a8a);transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,.25)}
-body{padding-top:42px}
+
+
+
+
+
+
+
+
+
+body{padding:0}
 </style>
 <style>
 :root{--blue:#1178FE;--blue-dark:#0A5FD6;--blue-light:#E8F2FF;--red:#E53935;--green:#16A34A;--gold:#F5A623;--ink:#1F2A3D;--gray:#6B7A90;--line:#E4EBF5;--bg:#F4F8FD;--card:#FFFFFF;}
@@ -282,19 +282,7 @@ tfoot td{background:#f9fafb;font-weight:600;border-top:2px solid var(--c-border)
 </head>
 <body>
 
-<div class="switch-bar">
-  <button class="switch-btn active" data-page="dashboard">📊 区域授权客户监控看板</button>
-  <button class="switch-btn" data-page="grade">📈 美云销商户分级动态分析</button>
-</div>
-
-<!-- 页面1：授权客户看板 -->
-<div class="page-container active" id="page-dashboard">
-  <div class="jump-btn-bar">
-    <button class="jump-btn" onclick="switchPage('grade')">→ 前往美云销商户等级分析看板</button>
-  </div>
-
-
-<div class="topbar">
+  <div class="topbar">
   <div class="topbar-in">
     <div class="logo">监</div>
     <div class="tt">
@@ -1537,34 +1525,6 @@ renderCustQuery();
 </script>
 
 
-</div>
 
-<!-- 页面2：美云销商户等级分析看板（iframe隔离） -->
-<div class="page-container" id="page-grade">
-  <iframe class="page-iframe" id="gradeFrame" src="grade_dashboard.html" onload="adjustIframeHeight()"></iframe>
-</div>
-
-<script>
-function switchPage(page){
-  document.querySelectorAll(".page-container").forEach(function(p){p.classList.remove("active");});
-  document.getElementById("page-"+page).classList.add("active");
-  document.querySelectorAll(".switch-btn").forEach(function(b){b.classList.remove("active");});
-  document.querySelector('[data-page="'+page+'"]').classList.add("active");
-  window.scrollTo(0,0);
-  if(page==="grade"){setTimeout(adjustIframeHeight,100);}
-}
-document.querySelectorAll(".switch-btn").forEach(function(b){
-  b.addEventListener("click",function(){switchPage(b.dataset.page);});
-});
-function adjustIframeHeight(){
-  var f=document.getElementById("gradeFrame");
-  if(f && f.contentWindow){
-    try{
-      var h=f.contentWindow.document.body.scrollHeight;
-      f.style.height=(h+50)+"px";
-    }catch(e){}
-  }
-}
-</script>
 </body>
 </html>
