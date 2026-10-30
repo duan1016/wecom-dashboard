@@ -326,7 +326,14 @@ tfoot td{background:#f9fafb;font-weight:600;border-top:2px solid var(--c-border)
       <button class="btn-export" style="padding:8px 16px;font-size:12px;" onclick="exportDetailImage()">导出图片</button><button class="btn-export" style="margin-left:8px;padding:8px 16px;font-size:12px;" onclick="exportDetailXLS()">导出表格</button>
     </div>
     <div class="filter-bar" style="margin:0 0 14px;box-shadow:none;">
-      <div class="filter-group"><span class="filter-label">城市：</span><select id="f-city" onchange="onCityChange()" style="min-width:0;width:130px;"></select></div>
+      <div class="filter-group" style="position:relative;">
+        <span class="filter-label">城市：</span>
+        <div id="city-ms-wrap" style="position:relative;display:inline-block;min-width:130px;">
+          <div id="city-ms-display" onclick="cityMsToggle()" style="border:1px solid #d0d5dd;border-radius:6px;padding:5px 28px 5px 8px;font-size:13px;cursor:pointer;background:#fff;min-height:20px;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">全部城市</div>
+          <div id="city-ms-arrow" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);pointer-events:none;color:#666;font-size:10px;">▼</div>
+          <div id="city-ms-dropdown" style="display:none;position:absolute;top:100%;left:0;background:#fff;border:1px solid #d0d5dd;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.12);z-index:1000;min-width:160px;max-height:320px;overflow-y:auto;margin-top:2px;padding:4px 0;"></div>
+        </div>
+      </div>
       <div class="filter-group"><span class="filter-label">区县：</span><select id="f-dist" onchange="refreshAll()" style="min-width:0;width:140px;"></select></div>
       <div class="filter-group"><span class="filter-label">客户编码：</span><select id="f-code" onchange="refreshAll()" style="min-width:0;width:160px;"></select></div>
       <div class="filter-group"><span class="filter-label">客户名称：</span><select id="f-name" onchange="refreshAll()" style="min-width:0;width:230px;"></select></div>
@@ -422,7 +429,7 @@ function hasActivity(c,k){ const p = c.m[k]; return !!(p && (p.a === 1 || p.s > 
 /* 计算单个机型汇总（口径与西安看板一致，支持城市筛选联动） */
 function calcModel(key){
   const cityF = getCityFilter();
-  const pool = cityF ? CUSTOMERS.filter(c => c.city === cityF) : CUSTOMERS;
+  const pool = cityF.length ? CUSTOMERS.filter(c => cityF.includes(c.city)) : CUSTOMERS;
   const authList = pool.filter(c => c.m[key] && c.m[key].a === 1);
   const auth = authList.length;
   const moving = authList.filter(c => c.m[key].i > 0).length;
@@ -464,22 +471,22 @@ function renderModelSelect(){
   sel.innerHTML = html;
 }
 
-/* 城市筛选口径：获取当前选中的城市，用于全局联动 */
+/* 城市筛选口径：返回选中城市数组，空数组=全选 */
 function getCityFilter(){
-  return document.getElementById('f-city') ? document.getElementById('f-city').value : '';
+  return cityMsSelected || [];
 }
 
 /* 按城市过滤客户列表 */
 function filterByCity(list){
-  const city = getCityFilter();
-  if(!city) return list;
-  return list.filter(c => c.city === city);
+  const cities = getCityFilter();
+  if(!cities.length) return list;
+  return list.filter(c => cities.includes(c.city));
 }
 
 function renderTopMetrics(){
   const keys = getScope();
   const cityF = getCityFilter();
-  const pool = cityF ? CUSTOMERS.filter(c => c.city === cityF) : CUSTOMERS;
+  const pool = cityF.length ? CUSTOMERS.filter(c => cityF.includes(c.city)) : CUSTOMERS;
   const auth = pool.filter(c => keys.some(k => (c.m[k]||{}).a === 1)).length;
   const sampleC = pool.filter(c => keys.some(k => (c.m[k]||{}).s > 0)).length;
   const orderC = pool.filter(c => keys.some(k => (c.m[k]||{}).o > 0)).length;
@@ -516,7 +523,7 @@ function renderCoreCards(){
 function modelRow(k){
   const m = MODELS[k];
   const cityF = getCityFilter();
-  const pool = cityF ? CUSTOMERS.filter(c => c.city === cityF) : CUSTOMERS;
+  const pool = cityF.length ? CUSTOMERS.filter(c => cityF.includes(c.city)) : CUSTOMERS;
   const authList = pool.filter(c => c.m[k] && c.m[k].a === 1);
   const auth = authList.length;
   const installTotal = pool.reduce((s,c) => s + ((c.m[k]||{}).i || 0), 0);
@@ -696,15 +703,94 @@ function fillSelect(id, values, allLabel){
   sel.innerHTML = html;
   sel.value = values.includes(cur) ? cur : '';
 }
+
+/* ===== 城市多选下拉 ===== */
+var cityMsSelected = []; // 选中的城市数组，空=全选
+
+function cityMsInit(){
+  var dd = document.getElementById('city-ms-dropdown');
+  var html = '<label style="display:block;padding:6px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #eee;" onmouseenter="this.style.background=\'#f5f7fa\'" onmouseleave="this.style.background=\'\'" onclick="event.stopPropagation();cityMsSelectAll()"><input type="checkbox" id="city-ms-all-cb" checked style="margin-right:6px;"> 全部城市</label>';
+  ALLOWED_CITIES.forEach(function(city){
+    html += '<label style="display:block;padding:6px 12px;cursor:pointer;font-size:13px;" onmouseenter="this.style.background=\'#f5f7fa\'" onmouseleave="this.style.background=\'\'" onclick="event.stopPropagation();cityMsSelectOne(\''+city+'\')"><input type="checkbox" class="city-ms-cb" value="'+city+'" style="margin-right:6px;"> '+city+'</label>';
+  });
+  dd.innerHTML = html;
+  cityMsUpdateDisplay();
+}
+
+function cityMsToggle(){
+  var dd = document.getElementById('city-ms-dropdown');
+  var arrow = document.getElementById('city-ms-arrow');
+  if(dd.style.display === 'none' || dd.style.display === ''){
+    dd.style.display = 'block';
+    arrow.textContent = '▲';
+  } else {
+    dd.style.display = 'none';
+    arrow.textContent = '▼';
+  }
+}
+
+function cityMsSelectOne(city){
+  var idx = cityMsSelected.indexOf(city);
+  if(idx >= 0){
+    cityMsSelected.splice(idx, 1);
+  } else {
+    cityMsSelected.push(city);
+  }
+  cityMsSyncCheckboxes();
+  cityMsUpdateDisplay();
+  refreshAll();
+}
+
+function cityMsSelectAll(){
+  var allCb = document.getElementById('city-ms-all-cb');
+  if(cityMsSelected.length === ALLOWED_CITIES.length){
+    cityMsSelected = [];
+  } else {
+    cityMsSelected = ALLOWED_CITIES.slice();
+  }
+  cityMsSyncCheckboxes();
+  cityMsUpdateDisplay();
+  refreshAll();
+}
+
+function cityMsSyncCheckboxes(){
+  var allCb = document.getElementById('city-ms-all-cb');
+  allCb.checked = cityMsSelected.length === ALLOWED_CITIES.length;
+  var cbs = document.querySelectorAll('.city-ms-cb');
+  for(var i=0;i<cbs.length;i++){
+    cbs[i].checked = cityMsSelected.indexOf(cbs[i].value) >= 0;
+  }
+}
+
+function cityMsUpdateDisplay(){
+  var el = document.getElementById('city-ms-display');
+  if(cityMsSelected.length === 0 || cityMsSelected.length === ALLOWED_CITIES.length){
+    el.textContent = '全部城市';
+  } else if(cityMsSelected.length === 1){
+    el.textContent = cityMsSelected[0];
+  } else {
+    el.textContent = cityMsSelected.length + '个城市';
+  }
+}
+
+// 点击外部关闭下拉
+document.addEventListener('click', function(e){
+  var wrap = document.getElementById('city-ms-wrap');
+  if(wrap && !wrap.contains(e.target)){
+    document.getElementById('city-ms-dropdown').style.display = 'none';
+    document.getElementById('city-ms-arrow').textContent = '▼';
+  }
+});
+
 function populateFilters(){
-  fillSelect('f-city', ALLOWED_CITIES, '全部城市');
   fillSelect('f-code', uniq(CUSTOMERS.map(c => c.code)), '全部编码');
   fillSelect('f-name', uniq(CUSTOMERS.map(c => c.name)), '全部客户');
+  cityMsInit();
   onCityChange();
 }
 function onCityChange(){
-  const city = document.getElementById('f-city').value;
-  const dists = uniq(CUSTOMERS.filter(c => !city || c.city === city).map(c => c.dist));
+  const cities = cityMsSelected || [];
+  const dists = uniq(CUSTOMERS.filter(c => !cities.length || cities.includes(c.city)).map(c => c.dist));
   fillSelect('f-dist', dists, '全部区县');
   refreshAll();
 }
@@ -714,7 +800,7 @@ function renderTable(){
   const q = document.getElementById('f-search').value.trim().toLowerCase();
   const qm = q ? MODEL_KEYS.filter(k =>
     MODELS[k].name.toLowerCase().includes(q) || (MODELS[k].sample||'').toLowerCase().includes(q)) : [];
-  const cityF = document.getElementById('f-city').value;
+  const cityF = getCityFilter();
   const distF = document.getElementById('f-dist').value;
   const codeF = document.getElementById('f-code').value;
   const nameF = document.getElementById('f-name').value;
@@ -725,7 +811,7 @@ function renderTable(){
     if (!hasAuth) return false;
     /* 排除空城市和南京市 */
     if (!c.city || !ALLOWED_CITIES.includes(c.city)) return false;
-    if (cityF && c.city !== cityF) return false;
+    if (cityF.length && !cityF.includes(c.city)) return false;
     if (distF && c.dist !== distF) return false;
     if (codeF && c.code !== codeF) return false;
     if (nameF && c.name !== nameF) return false;
@@ -871,7 +957,7 @@ function exportDetailImage(){
   const q = document.getElementById('f-search').value.trim().toLowerCase();
   const qm = q ? MODEL_KEYS.filter(k =>
     MODELS[k].name.toLowerCase().includes(q) || (MODELS[k].sample||'').toLowerCase().includes(q)) : [];
-  const cityF = document.getElementById('f-city').value;
+  const cityF = getCityFilter();
   const distF = document.getElementById('f-dist').value;
   const codeF = document.getElementById('f-code').value;
   const nameF = document.getElementById('f-name').value;
@@ -881,7 +967,7 @@ function exportDetailImage(){
     const hasAuth = MODEL_KEYS.some(k => (c.m[k]||{}).a === 1);
     if (!hasAuth) return false;
     if (!c.city || !ALLOWED_CITIES.includes(c.city)) return false;
-    if (cityF && c.city !== cityF) return false;
+    if (cityF.length && !cityF.includes(c.city)) return false;
     if (distF && c.dist !== distF) return false;
     if (codeF && c.code !== codeF) return false;
     if (nameF && c.name !== nameF) return false;
@@ -967,7 +1053,7 @@ function exportDetailImage(){
   ctx.fillText('数据来源：授权明细.xlsx + 订单数据.xlsx + 1.1-9.13安装.xlsx + 商户基础信息.xlsx', 24, H - 24);
   const a = document.createElement('a');
   a.href = canvas.toDataURL('image/png');
-  a.download = '授权客户明细_'+(cityF||'全部')+'_'+ts.replace(/[: ]/g,'_')+'.png';
+  a.download = '授权客户明细_'+(cityF.length ? cityF.join(',') : '全部')+'_'+ts.replace(/[: ]/g,'_')+'.png';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
@@ -1226,7 +1312,7 @@ function exportDetailXLS(){
   const q = document.getElementById('f-search').value.trim().toLowerCase();
   const qm = q ? MODEL_KEYS.filter(k =>
     MODELS[k].name.toLowerCase().includes(q) || (MODELS[k].sample||'').toLowerCase().includes(q)) : [];
-  const cityF = document.getElementById('f-city').value;
+  const cityF = getCityFilter();
   const distF = document.getElementById('f-dist').value;
   const codeF = document.getElementById('f-code').value;
   const nameF = document.getElementById('f-name').value;
@@ -1235,7 +1321,7 @@ function exportDetailXLS(){
     const hasAuth = MODEL_KEYS.some(k => (c.m[k]||{}).a === 1);
     if (!hasAuth) return false;
     if (!c.city || !ALLOWED_CITIES.includes(c.city)) return false;
-    if (cityF && c.city !== cityF) return false;
+    if (cityF.length && !cityF.includes(c.city)) return false;
     if (distF && c.dist !== distF) return false;
     if (codeF && c.code !== codeF) return false;
     if (nameF && c.name !== nameF) return false;
