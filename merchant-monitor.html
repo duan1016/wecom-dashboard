@@ -488,9 +488,9 @@ function renderTopMetrics(){
   const cityF = getCityFilter();
   const pool = cityF.length ? CUSTOMERS.filter(c => cityF.includes(c.city)) : CUSTOMERS;
   const auth = pool.filter(c => keys.some(k => (c.m[k]||{}).a === 1)).length;
-  const sampleC = pool.filter(c => keys.some(k => (c.m[k]||{}).s > 0)).length;
-  const orderC = pool.filter(c => keys.some(k => (c.m[k]||{}).o > 0)).length;
-  const installC = pool.filter(c => keys.some(k => (c.m[k]||{}).i > 0)).length;
+  const sampleC = pool.filter(c => keys.some(k => (c.m[k]||{}).a === 1 && (c.m[k]||{}).s > 0)).length;
+  const orderC = pool.filter(c => keys.some(k => (c.m[k]||{}).a === 1 && (c.m[k]||{}).o > 0)).length;
+  const installC = pool.filter(c => keys.some(k => (c.m[k]||{}).a === 1 && (c.m[k]||{}).i > 0)).length;
   document.getElementById('top-metrics').innerHTML = `
     <div class="tm-card"><div class="tm-v num">${auth}</div><div class="tm-l">授权客户数量</div></div>
     <div class="tm-card"><div class="tm-v num">${sampleC}</div><div class="tm-l">样机下单客户数量</div></div>
