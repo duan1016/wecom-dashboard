@@ -401,7 +401,7 @@ const DATA_DATE = '2026年11月22日';          // 数据截止日期
 /* 授权客户数已通过授权明细表Q列+U列去重核对 */
 const MODELS = {
   t3g: { name:'KFR-35GW/T3-Ⅱ',  code:'31022010011248', sample:'KFR-35G/T3-Ⅱ[Y]',  scode:'21022011Y05222', quota:42,  color:'#42a5f5', core:1 },
-  j2l: { name:'KFR-72LW/J2',    code:'31022210008086', sample:'KFR-72L/J2[Y]',    scode:'21022211Y03693', quota:132, color:'#66bb6a', core:1 },
+  j2l: { name:'KFR-72LW/J2',    code:'31022210008086', sample:'KFR-72L/J2[Y]',    scode:'21022211Y03693', quota:132, color:'#66bb6a' },
   j2g: { name:'KFR-35GW/J2',    code:'31022010011328', sample:'KFR-35G/J2[Y]',    scode:'21022011Y05242', quota:132, color:'#ffa726', core:1 },
   sj1: { name:'KFR-35GW/SJ1-1', code:'31022010M02995', sample:'—',                scode:'—',             quota:null,color:'#ab47bc' },
   f2g: { name:'KFR-35GW/F2',    code:'31022010010368', sample:'KFR-35G/F2[Y]',    scode:'21022011Y04462', quota:100, color:'#26c6da' },
@@ -419,7 +419,7 @@ const MODELS = {
   w2m30g:{ name:'KFR-35GW/W2(M30Q)', code:'—',              sample:'KFR-35G/W2(M30Q)[Y]', scode:'21022011Y05322', quota:80, color:'#7e57c2', core:1 }
 };
 const MODEL_KEYS = Object.keys(MODELS);
-const CORE = ['t3g','j2l','jh2','t2m30l','t2m30g','w2m30l','w2m30g'];
+const CORE = ['t3g','jh2','t2m30l','t2m30g','w2m30l','w2m30g'];
 
 /* 客户明细数据（占位）：每客户 city 城市 / dist 区县 / code 编码 / name 名称 + m 各机型
    { a 授权(1/0), d 是否出样(1/0), s 样机下单(台), p 提货(台), o 订单(台), i 安装(台) }；未列出的机型 = 未授权且全 0 */
