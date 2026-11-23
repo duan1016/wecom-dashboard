@@ -410,10 +410,16 @@ const MODELS = {
   m20: { name:'KFR-72LW/M20',   code:'31022210M04706', sample:'KFR-72L/M20[Y]',   scode:'21022211Y03713', quota:null,color:'#78909c' },
   fa2: { name:'KFR-72LW/FA2',   code:'31022210007786', sample:'KFR-72L/FA2[Y]',   scode:'21022211Y03313', quota:120, color:'#5c6bc0' },
   q2:  { name:'KFR-35GW/Q2',    code:'31022010010808', sample:'KFR-35G/Q2[Y]',    scode:'21022011Y04762', quota:216, color:'#26a69a' },
-  jh2:{ name:'KFR-72LW/JH2', code:'31022211008264', sample:'KFR-72L/JH2[Y]', scode:'21022211Y03653', quota:73, color:'#FF6B6B' }
+  jh2: { name:'KFR-72LW/JH2',   code:'31022211008264', sample:'KFR-72L/JH2[Y]',   scode:'21022211Y03653', quota:73,  color:'#FF6B6B', core:1 },
+  hwr7:{ name:'KFR-35GW/HWR7',  code:'31022010011068', sample:'KFR-35G/HWR7[Y]',  scode:'21022011Y05042', quota:49,  color:'#8d6e63' },
+  hwr3:{ name:'KFR-72LW/HWR3',  code:'31022210008046', sample:'KFR-72L/HWR3[Y]',  scode:'21022211Y03613', quota:49,  color:'#90a4ae' },
+  t2m30l:{ name:'KFR-72LW/T2(M30)',  code:'31022210008306', sample:'KFR-72L/T2(M30)[Y]',  scode:'21022211Y03893', quota:57, color:'#ef5350', core:1 },
+  t2m30g:{ name:'KFR-35GW/T2(M30)',  code:'31022010011408', sample:'KFR-35G/T2(M30)[Y]',  scode:'21022011Y05302', quota:57, color:'#ff7043', core:1 },
+  w2m30l:{ name:'KFR-72LW/W2(M30Q)', code:'—',              sample:'KFR-72L/W2(M30Q)[Y]', scode:'21022211Y03853', quota:80, color:'#26a69a', core:1 },
+  w2m30g:{ name:'KFR-35GW/W2(M30Q)', code:'—',              sample:'KFR-35G/W2(M30Q)[Y]', scode:'21022011Y05322', quota:80, color:'#7e57c2', core:1 }
 };
 const MODEL_KEYS = Object.keys(MODELS);
-const CORE = ['t3g','j2l','jh2'];
+const CORE = ['t3g','j2l','jh2','t2m30l','t2m30g','w2m30l','w2m30g'];
 
 /* 客户明细数据（占位）：每客户 city 城市 / dist 区县 / code 编码 / name 名称 + m 各机型
    { a 授权(1/0), d 是否出样(1/0), s 样机下单(台), p 提货(台), o 订单(台), i 安装(台) }；未列出的机型 = 未授权且全 0 */
